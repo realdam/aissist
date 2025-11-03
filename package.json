@@ -28,8 +28,16 @@
     "local-first",
     "productivity"
   ],
-  "author": "",
+  "author": "Albert Nahas",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/albertnahas/aissist.git"
+  },
+  "homepage": "https://github.com/albertnahas/aissist#readme",
+  "bugs": {
+    "url": "https://github.com/albertnahas/aissist/issues"
+  },
   "engines": {
     "node": ">=20.19.0"
   },
