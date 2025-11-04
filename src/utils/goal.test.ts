@@ -15,6 +15,7 @@ Deadline: 2025-11-15`;
       timestamp: '14:30',
       codename: 'complete-project-proposal',
       text: 'Complete project proposal',
+      description: null,
       deadline: '2025-11-15',
       rawEntry: entry,
     });
@@ -31,6 +32,7 @@ Launch MVP to production`;
       timestamp: '14:30',
       codename: 'launch-mvp',
       text: 'Launch MVP to production',
+      description: null,
       deadline: null,
       rawEntry: entry,
     });
@@ -47,6 +49,7 @@ Complete project proposal`;
       timestamp: '14:30',
       codename: null,
       text: 'Complete project proposal',
+      description: null,
       deadline: null,
       rawEntry: entry,
     });
@@ -65,6 +68,7 @@ and details`;
       timestamp: '14:30',
       codename: 'complex-task',
       text: 'This is a complex task\nwith multiple lines\nand details',
+      description: null,
       deadline: null,
       rawEntry: entry,
     });
@@ -163,5 +167,158 @@ describe('Goal codename format', () => {
       const result = parseGoalEntry(entry);
       expect(result?.codename).toBe(codename);
     });
+  });
+});
+
+describe('Goal descriptions', () => {
+  it('should parse goal with single-line description', () => {
+    const entry = `## 14:30 - project-task
+
+Complete the project
+
+> This is a detailed description
+
+Deadline: 2025-11-15`;
+
+    const result = parseGoalEntry(entry);
+
+    expect(result).toEqual({
+      timestamp: '14:30',
+      codename: 'project-task',
+      text: 'Complete the project',
+      description: 'This is a detailed description',
+      deadline: '2025-11-15',
+      rawEntry: entry,
+    });
+  });
+
+  it('should parse goal with multiline description', () => {
+    const entry = `## 14:30 - complex-project
+
+Launch new feature
+
+> Phase 1: Testing
+> Phase 2: Marketing
+> Phase 3: Launch`;
+
+    const result = parseGoalEntry(entry);
+
+    expect(result).toEqual({
+      timestamp: '14:30',
+      codename: 'complex-project',
+      text: 'Launch new feature',
+      description: 'Phase 1: Testing\nPhase 2: Marketing\nPhase 3: Launch',
+      deadline: null,
+      rawEntry: entry,
+    });
+  });
+
+  it('should parse goal with description and no deadline', () => {
+    const entry = `## 09:00 - research-task
+
+Research AI models
+
+> Focus on transformer architectures
+> Compare performance metrics`;
+
+    const result = parseGoalEntry(entry);
+
+    expect(result?.description).toBe('Focus on transformer architectures\nCompare performance metrics');
+    expect(result?.deadline).toBeNull();
+  });
+
+  it('should parse goal with description between text and deadline', () => {
+    const entry = `## 14:30 - important-task
+
+Complete deliverables
+
+> Include documentation
+> Run all tests
+
+Deadline: 2025-12-01`;
+
+    const result = parseGoalEntry(entry);
+
+    expect(result).toEqual({
+      timestamp: '14:30',
+      codename: 'important-task',
+      text: 'Complete deliverables',
+      description: 'Include documentation\nRun all tests',
+      deadline: '2025-12-01',
+      rawEntry: entry,
+    });
+  });
+
+  it('should handle goals without descriptions (backward compatibility)', () => {
+    const entry = `## 10:00 - simple-goal
+
+Just a simple goal text
+
+Deadline: 2025-11-30`;
+
+    const result = parseGoalEntry(entry);
+
+    expect(result?.description).toBeNull();
+    expect(result?.text).toBe('Just a simple goal text');
+  });
+
+  it('should handle empty description blockquotes', () => {
+    const entry = `## 10:00 - goal-with-empty-desc
+
+Goal text
+
+>
+
+Deadline: 2025-11-30`;
+
+    const result = parseGoalEntry(entry);
+
+    // Empty blockquote should result in empty string, which will be treated as no description
+    expect(result?.description).toBe('');
+  });
+});
+
+describe('parseGoalEntries with descriptions', () => {
+  it('should parse multiple goals with and without descriptions', () => {
+    const content = `## 09:00 - first-goal
+
+First goal text
+
+> First description
+
+## 14:30 - second-goal
+
+Second goal text
+
+Deadline: 2025-11-20`;
+
+    const results = parseGoalEntries(content);
+
+    expect(results).toHaveLength(2);
+    expect(results[0].description).toBe('First description');
+    expect(results[1].description).toBeNull();
+  });
+
+  it('should handle complex mix of legacy and new format with descriptions', () => {
+    const content = `## 09:00
+
+Legacy goal without codename
+
+## 10:30 - goal-with-desc
+
+Modern goal
+
+> With description
+
+## 14:30 - simple-modern
+
+Simple modern goal`;
+
+    const results = parseGoalEntries(content);
+
+    expect(results).toHaveLength(3);
+    expect(results[0].description).toBeNull();
+    expect(results[1].description).toBe('With description');
+    expect(results[2].description).toBeNull();
   });
 });

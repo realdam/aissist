@@ -177,6 +177,7 @@ export interface GoalEntry {
   timestamp: string;
   codename: string | null;
   text: string;
+  description: string | null;
   deadline: string | null;
   rawEntry: string;
 }
@@ -185,7 +186,7 @@ export interface GoalEntry {
  * Parse a goal entry from markdown format
  * Supports both new format (with codename) and legacy format (without)
  *
- * New format: ## HH:MM - codename\n\nGoal text\n\nDeadline: YYYY-MM-DD
+ * New format: ## HH:MM - codename\n\nGoal text\n\n> Description\n\nDeadline: YYYY-MM-DD
  * Legacy format: ## HH:MM\n\nGoal text
  */
 export function parseGoalEntry(entry: string): GoalEntry | null {
@@ -199,24 +200,42 @@ export function parseGoalEntry(entry: string): GoalEntry | null {
   const timestamp = headerMatch[1];
   const codename = headerMatch[2] || null;
 
-  // Extract text (everything after header until deadline or end)
+  // Extract content after header
   const afterHeader = trimmed.substring(headerMatch[0].length).trim();
+
+  // Extract deadline if present (always at the end)
   const deadlineMatch = afterHeader.match(/\n\nDeadline:\s+(\d{4}-\d{2}-\d{2})\s*$/);
+  const deadline = deadlineMatch ? deadlineMatch[1] : null;
+  const contentWithoutDeadline = deadlineMatch
+    ? afterHeader.substring(0, deadlineMatch.index).trim()
+    : afterHeader;
 
+  // Extract description (blockquote format: lines starting with >)
+  // Description comes after goal text, separated by blank line
+  const descriptionMatch = contentWithoutDeadline.match(/\n\n((?:^>.*$\n?)+)/m);
   let text: string;
-  let deadline: string | null = null;
+  let description: string | null = null;
 
-  if (deadlineMatch) {
-    deadline = deadlineMatch[1];
-    text = afterHeader.substring(0, deadlineMatch.index).trim();
+  if (descriptionMatch) {
+    // Extract description and remove blockquote markers
+    const rawDescription = descriptionMatch[1];
+    description = rawDescription
+      .split('\n')
+      .map(line => line.replace(/^>\s?/, ''))
+      .join('\n')
+      .trim();
+
+    // Text is everything before the description
+    text = contentWithoutDeadline.substring(0, descriptionMatch.index).trim();
   } else {
-    text = afterHeader;
+    text = contentWithoutDeadline;
   }
 
   return {
     timestamp,
     codename,
     text,
+    description,
     deadline,
     rawEntry: trimmed,
   };
@@ -324,11 +343,67 @@ export async function updateGoalDeadline(
   if (goal.codename) {
     newEntry += ` - ${goal.codename}`;
   }
-  newEntry += `\n\n${goal.text}\n\nDeadline: ${deadline}`;
+  newEntry += `\n\n${goal.text}`;
+
+  if (goal.description) {
+    const descriptionLines = goal.description.split('\n').map(line => `> ${line}`).join('\n');
+    newEntry += `\n\n${descriptionLines}`;
+  }
+
+  newEntry += `\n\nDeadline: ${deadline}`;
 
   entries[goalIndex] = {
     ...goal,
     deadline,
+    rawEntry: newEntry,
+  };
+
+  // Rebuild file content
+  const newContent = entries.map(e => e.rawEntry).join('\n\n');
+  await writeFile(filePath, newContent);
+  return true;
+}
+
+/**
+ * Update a goal's description
+ */
+export async function updateGoalDescription(
+  filePath: string,
+  codename: string,
+  description: string
+): Promise<boolean> {
+  const content = await readMarkdown(filePath);
+  if (!content) return false;
+
+  const entries = parseGoalEntries(content);
+  const goalIndex = entries.findIndex(e => e.codename === codename);
+
+  if (goalIndex === -1) return false;
+
+  const goal = entries[goalIndex];
+
+  // Rebuild goal entry with new description
+  let newEntry = `## ${goal.timestamp}`;
+  if (goal.codename) {
+    newEntry += ` - ${goal.codename}`;
+  }
+  newEntry += `\n\n${goal.text}`;
+
+  // Add description if provided (and not empty)
+  const trimmedDescription = description.trim();
+  if (trimmedDescription) {
+    const descriptionLines = trimmedDescription.split('\n').map(line => `> ${line}`).join('\n');
+    newEntry += `\n\n${descriptionLines}`;
+  }
+
+  // Add deadline if present
+  if (goal.deadline) {
+    newEntry += `\n\nDeadline: ${goal.deadline}`;
+  }
+
+  entries[goalIndex] = {
+    ...goal,
+    description: trimmedDescription || null,
     rawEntry: newEntry,
   };
 

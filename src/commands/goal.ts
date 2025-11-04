@@ -10,6 +10,7 @@ import {
   removeGoalEntry,
   completeGoalEntry,
   updateGoalDeadline,
+  updateGoalDescription,
   type GoalEntry,
 } from '../utils/storage.js';
 import { getCurrentDate, getCurrentTime, parseDate, formatDate } from '../utils/date.js';
@@ -25,6 +26,7 @@ goalCommand
   .description('Add a new goal')
   .argument('<text>', 'Goal text')
   .option('-d, --deadline <date>', 'Set deadline (YYYY-MM-DD format)')
+  .option('-D, --description <text>', 'Add a description to the goal')
   .action(async (text: string, options) => {
     try {
       const storagePath = await getStoragePath();
@@ -73,6 +75,13 @@ goalCommand
 
       // Build goal entry
       let entry = `## ${time} - ${codename}\n\n${text}`;
+
+      // Add description if provided
+      if (options.description) {
+        const descriptionLines = options.description.split('\n').map((line: string) => `> ${line}`).join('\n');
+        entry += `\n\n${descriptionLines}`;
+      }
+
       if (deadlineDate) {
         entry += `\n\nDeadline: ${deadlineDate}`;
       }
@@ -80,6 +89,9 @@ goalCommand
       await appendToMarkdown(filePath, entry);
 
       success(`Goal added with codename: ${chalk.cyan(codename)}`);
+      if (options.description) {
+        info('Description added');
+      }
       if (deadlineDate) {
         info(`Deadline: ${deadlineDate}`);
       }
@@ -236,10 +248,19 @@ async function interactiveGoalList(
       ? entry.text.substring(0, 60) + '...'
       : entry.text;
 
+    // Build description for display (shown below the choice)
+    let displayDescription = entry.text;
+    if (entry.description) {
+      const truncatedDescription = entry.description.length > 40
+        ? entry.description.substring(0, 40) + '...'
+        : entry.description;
+      displayDescription = `${entry.text}\n${chalk.gray('Description: ' + truncatedDescription)}`;
+    }
+
     return {
       name: `${entry.timestamp} | ${codenameDisplay} | ${truncatedText}${deadlineDisplay}`,
       value: index,
-      description: entry.text,
+      description: displayDescription,
     };
   });
 
@@ -275,6 +296,7 @@ async function interactiveGoalList(
       { name: '✓ Complete', value: 'complete' },
       { name: '✗ Delete', value: 'delete' },
       { name: '📅 Set Deadline', value: 'deadline' },
+      { name: '📝 Edit Description', value: 'description' },
       { name: '← Cancel', value: 'cancel' },
     ],
   });
@@ -313,6 +335,23 @@ async function interactiveGoalList(
       success(`Deadline set for '${selectedGoal.codename}': ${deadlineDate}`);
     } else {
       error('Failed to set deadline');
+    }
+  } else if (action === 'description') {
+    const currentDescription = selectedGoal.description || '';
+    const descriptionText = await input({
+      message: 'Enter description (leave empty to remove):',
+      default: currentDescription,
+    });
+
+    const updated = await updateGoalDescription(filePath, selectedGoal.codename, descriptionText);
+    if (updated) {
+      if (descriptionText.trim()) {
+        success(`Description updated for '${selectedGoal.codename}'`);
+      } else {
+        success(`Description removed from '${selectedGoal.codename}'`);
+      }
+    } else {
+      error('Failed to update description');
     }
   }
 }
