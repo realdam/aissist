@@ -12,9 +12,10 @@ import {
   updateGoalDeadline,
   type GoalEntry,
 } from '../utils/storage.js';
-import { getCurrentDate, getCurrentTime, parseDate } from '../utils/date.js';
+import { getCurrentDate, getCurrentTime, parseDate, formatDate } from '../utils/date.js';
 import { success, error, info } from '../utils/cli.js';
 import { generateGoalCodename } from '../llm/claude.js';
+import { parseTimeframe } from '../utils/timeframe-parser.js';
 import chalk from 'chalk';
 
 const goalCommand = new Command('goal');
@@ -49,17 +50,38 @@ goalCommand
         return;
       }
 
+      // Prompt for deadline if not provided via flag
+      let deadlineDate: string | undefined = options.deadline;
+      if (!options.deadline) {
+        try {
+          const deadlineInput = await input({
+            message: 'Enter deadline (default: Tomorrow):',
+            default: 'Tomorrow',
+          });
+
+          const trimmed = deadlineInput.trim();
+          if (trimmed !== '' && trimmed.toLowerCase() !== 'skip') {
+            const parsedTimeframe = parseTimeframe(trimmed);
+            deadlineDate = formatDate(parsedTimeframe.end);
+          }
+        } catch (err) {
+          // User cancelled (Ctrl+C) or parser error
+          error(`Failed to parse deadline: ${(err as Error).message}`);
+          return;
+        }
+      }
+
       // Build goal entry
       let entry = `## ${time} - ${codename}\n\n${text}`;
-      if (options.deadline) {
-        entry += `\n\nDeadline: ${options.deadline}`;
+      if (deadlineDate) {
+        entry += `\n\nDeadline: ${deadlineDate}`;
       }
 
       await appendToMarkdown(filePath, entry);
 
       success(`Goal added with codename: ${chalk.cyan(codename)}`);
-      if (options.deadline) {
-        info(`Deadline: ${options.deadline}`);
+      if (deadlineDate) {
+        info(`Deadline: ${deadlineDate}`);
       }
     } catch (err) {
       error(`Failed to add goal: ${(err as Error).message}`);

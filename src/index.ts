@@ -5,6 +5,7 @@ import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { handleError } from './utils/cli.js';
+import { printBrand } from './utils/brand.js';
 
 // Import commands
 import { initCommand } from './commands/init.js';
@@ -28,6 +29,9 @@ try {
 } catch {
   // Use default version if package.json can't be read
 }
+
+// Print brand logo
+printBrand();
 
 const program = new Command();
 

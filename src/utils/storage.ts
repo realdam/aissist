@@ -1,4 +1,4 @@
-import { mkdir, access, readFile, writeFile } from 'fs/promises';
+import { mkdir, access, readFile, writeFile, readdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { z } from 'zod';
@@ -336,4 +336,51 @@ export async function updateGoalDeadline(
   const newContent = entries.map(e => e.rawEntry).join('\n\n');
   await writeFile(filePath, newContent);
   return true;
+}
+
+/**
+ * Active goal interface for linking
+ */
+export interface ActiveGoal {
+  codename: string;
+  text: string;
+  date: string;
+}
+
+/**
+ * Get all active goals (excluding finished goals) across all dates
+ */
+export async function getActiveGoals(storagePath: string): Promise<ActiveGoal[]> {
+  const goalsDir = join(storagePath, 'goals');
+  const activeGoals: ActiveGoal[] = [];
+
+  try {
+    const files = await readdir(goalsDir);
+    const mdFiles = files.filter(f => f.endsWith('.md')).sort().reverse(); // Most recent first
+
+    for (const file of mdFiles) {
+      const filePath = join(goalsDir, file);
+      const content = await readMarkdown(filePath);
+
+      if (!content) continue;
+
+      const entries = parseGoalEntries(content);
+      const date = file.replace('.md', '');
+
+      // Only include goals with codenames (non-legacy goals)
+      for (const entry of entries) {
+        if (entry.codename) {
+          activeGoals.push({
+            codename: entry.codename,
+            text: entry.text,
+            date,
+          });
+        }
+      }
+    }
+  } catch (error) {
+    // Goals directory doesn't exist or is empty
+  }
+
+  return activeGoals;
 }

@@ -43,3 +43,37 @@ The system SHALL allow users to view their stored goals.
 - **WHEN** no goals exist for the requested date
 - **THEN** the system displays a message indicating no goals were found
 
+### Requirement: Interactive Deadline Entry During Goal Creation
+The system SHALL prompt users to enter a deadline when adding a goal, with natural language support and "Tomorrow" as the default.
+
+#### Scenario: User accepts default deadline
+- **WHEN** the user runs `aissist goal add "Complete project proposal"`
+- **AND** the system prompts for a deadline with default "Tomorrow"
+- **AND** the user presses Enter without typing anything
+- **THEN** the system sets the deadline to tomorrow's date in YYYY-MM-DD format
+- **AND** displays the goal confirmation with the deadline
+
+#### Scenario: User enters natural language deadline
+- **WHEN** the user runs `aissist goal add "Review quarterly goals"`
+- **AND** the system prompts for a deadline
+- **AND** the user enters a natural language timeframe like "next week"
+- **THEN** the system parses the input to a date in YYYY-MM-DD format
+- **AND** stores the deadline with the goal
+
+#### Scenario: User enters ISO date deadline
+- **WHEN** the user runs `aissist goal add "Submit report"`
+- **AND** the system prompts for a deadline
+- **AND** the user enters an ISO date like "2025-12-31"
+- **THEN** the system accepts the date and stores it as the deadline
+
+#### Scenario: User skips deadline with empty input
+- **WHEN** the user runs `aissist goal add "Explore new ideas"`
+- **AND** the system prompts for a deadline
+- **AND** the user enters an empty string or "skip"
+- **THEN** the system adds the goal without a deadline
+
+#### Scenario: User provides deadline via -d flag
+- **WHEN** the user runs `aissist goal add "Finish coding" -d 2025-11-10`
+- **THEN** the system does NOT prompt for a deadline interactively
+- **AND** uses the provided flag value as the deadline
+

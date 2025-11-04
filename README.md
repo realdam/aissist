@@ -103,16 +103,28 @@ Manage your goals with AI-generated codenames, deadlines, and interactive manage
 - **Backward Compatible**: Legacy goals without codenames continue to work
 
 **Subcommands:**
-- `add <text> [--deadline <date>]` - Add a new goal with optional deadline
+- `add <text> [--deadline <date>]` - Add a new goal with interactive deadline prompt
 - `list [--date <date>] [--plain]` - List goals (interactive mode by default)
 - `complete <codename>` - Mark a goal as completed
 - `remove <codename>` - Remove a goal
 - `deadline <codename> <date>` - Set or update a goal's deadline
 
+**Interactive Deadline Prompt:**
+When adding a goal, you'll be prompted to set a deadline with natural language support:
+- **Default**: Press Enter to use "Tomorrow" as the deadline
+- **Natural Language**: Enter "next week", "this month", "next 7 days", etc.
+- **ISO Date**: Enter specific dates like "2025-12-31"
+- **Skip**: Enter an empty string or "skip" to add goal without deadline
+- **Flag**: Use `-d` flag to skip the prompt and set deadline directly
+
 **Examples:**
 ```bash
-# Add goals
+# Add goals with interactive deadline prompt
 aissist goal add "Complete project proposal"
+# → Prompts for deadline (default: Tomorrow)
+# → Accept default, enter "next week", or skip
+
+# Add goal with deadline flag (no prompt)
 aissist goal add "Launch MVP" --deadline 2025-11-15
 
 # Interactive list (select goal and choose action)
@@ -128,6 +140,11 @@ aissist goal remove launch-mvp
 
 # View goals from specific date
 aissist goal list --date 2024-01-15
+
+# Natural language deadline examples
+aissist goal add "Quarterly review"        # Then enter: this quarter
+aissist goal add "Weekly team sync"        # Then enter: next week
+aissist goal add "Monthly report"          # Then enter: 2026 Q1
 ```
 
 **Goal Format:**

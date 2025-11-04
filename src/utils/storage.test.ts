@@ -11,6 +11,7 @@ import {
   saveConfig,
   appendToMarkdown,
   readMarkdown,
+  getActiveGoals,
   ConfigSchema,
   type Config,
 } from './storage';
@@ -244,6 +245,104 @@ describe('storage utilities', () => {
 
       const result = await readMarkdown(filePath);
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getActiveGoals', () => {
+    it('should return empty array when goals directory does not exist', async () => {
+      const result = await getActiveGoals(testDir);
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when goals directory is empty', async () => {
+      const goalsDir = join(testDir, 'goals');
+      await mkdir(goalsDir);
+
+      const result = await getActiveGoals(testDir);
+      expect(result).toEqual([]);
+    });
+
+    it('should return active goals from single date file', async () => {
+      const goalsDir = join(testDir, 'goals');
+      await mkdir(goalsDir);
+
+      const goalContent = `## 10:00 - test-goal
+
+Complete the test
+
+Deadline: 2025-12-31`;
+
+      await writeFile(join(goalsDir, '2025-11-04.md'), goalContent);
+
+      const result = await getActiveGoals(testDir);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        codename: 'test-goal',
+        text: 'Complete the test',
+        date: '2025-11-04',
+      });
+    });
+
+    it('should return active goals from multiple date files', async () => {
+      const goalsDir = join(testDir, 'goals');
+      await mkdir(goalsDir);
+
+      const goal1 = `## 10:00 - goal-one
+
+First goal`;
+      const goal2 = `## 15:30 - goal-two
+
+Second goal`;
+
+      await writeFile(join(goalsDir, '2025-11-01.md'), goal1);
+      await writeFile(join(goalsDir, '2025-11-04.md'), goal2);
+
+      const result = await getActiveGoals(testDir);
+      expect(result).toHaveLength(2);
+      // Most recent first
+      expect(result[0].codename).toBe('goal-two');
+      expect(result[0].date).toBe('2025-11-04');
+      expect(result[1].codename).toBe('goal-one');
+      expect(result[1].date).toBe('2025-11-01');
+    });
+
+    it('should skip goals without codenames (legacy format)', async () => {
+      const goalsDir = join(testDir, 'goals');
+      await mkdir(goalsDir);
+
+      const mixedContent = `## 10:00 - with-codename
+
+Goal with codename
+
+## 11:00
+
+Legacy goal without codename`;
+
+      await writeFile(join(goalsDir, '2025-11-04.md'), mixedContent);
+
+      const result = await getActiveGoals(testDir);
+      expect(result).toHaveLength(1);
+      expect(result[0].codename).toBe('with-codename');
+    });
+
+    it('should return multiple goals from same date file', async () => {
+      const goalsDir = join(testDir, 'goals');
+      await mkdir(goalsDir);
+
+      const multiGoalContent = `## 10:00 - morning-goal
+
+Morning task
+
+## 14:00 - afternoon-goal
+
+Afternoon task`;
+
+      await writeFile(join(goalsDir, '2025-11-04.md'), multiGoalContent);
+
+      const result = await getActiveGoals(testDir);
+      expect(result).toHaveLength(2);
+      expect(result[0].codename).toBe('morning-goal');
+      expect(result[1].codename).toBe('afternoon-goal');
     });
   });
 });
