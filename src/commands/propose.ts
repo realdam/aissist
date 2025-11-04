@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { join } from 'path';
-import { input, select } from '@inquirer/prompts';
+import { input, select, checkbox } from '@inquirer/prompts';
 import ora from 'ora';
 import chalk from 'chalk';
 import { getStoragePath, appendToMarkdown } from '../utils/storage.js';
@@ -169,44 +169,72 @@ proposeCommand
   });
 
 /**
+ * Extract numbered proposal items from response text
+ */
+function parseProposalItems(response: string): string[] {
+  const lines = response.split('\n');
+  const proposals: string[] = [];
+
+  for (const line of lines) {
+    const match = line.match(/^\s*\d+\.\s+(.+)/);
+    if (match) {
+      proposals.push(match[1].trim());
+    }
+  }
+
+  return proposals;
+}
+
+/**
  * Parse and save proposal items as todos
  */
 async function saveProposalsAsTodos(response: string, storagePath: string, linkedGoalCodename: string | null = null): Promise<void> {
-  const spinner = ora('Saving proposals as todos...').start();
-
   try {
     // Extract numbered items from the response
-    const lines = response.split('\n');
-    const proposals: string[] = [];
-
-    for (const line of lines) {
-      const match = line.match(/^\s*\d+\.\s+(.+)/);
-      if (match) {
-        proposals.push(match[1].trim());
-      }
-    }
+    const proposals = parseProposalItems(response);
 
     if (proposals.length === 0) {
-      spinner.warn('No numbered proposals found to save');
+      warn('No numbered proposals found to save');
       return;
     }
 
-    // Save each proposal as a todo
+    // Show interactive selection with all items checked by default
+    const choices = proposals.map((text, index) => ({
+      name: text,
+      value: index,
+      checked: true,
+    }));
+
+    const selectedIndices = await checkbox({
+      message: 'Select proposals to create as todos (Space to toggle, Enter to confirm):',
+      choices,
+    });
+
+    if (selectedIndices.length === 0) {
+      info('No items selected');
+      return;
+    }
+
+    // Save selected proposals as todos
+    const spinner = ora('Saving proposals as todos...').start();
     const date = getCurrentDate();
     const time = getCurrentTime();
     const filePath = join(storagePath, 'todos', `${date}.md`);
-
     const goalSuffix = linkedGoalCodename ? ` (Goal: ${linkedGoalCodename})` : '';
 
-    for (const proposal of proposals) {
+    for (const index of selectedIndices) {
+      const proposal = proposals[index];
       const entry = `## ${time}\n\n- [ ] ${proposal}${goalSuffix}`;
       await appendToMarkdown(filePath, entry);
     }
 
-    spinner.succeed(`Saved ${proposals.length} proposal(s) as todos!`);
+    spinner.succeed(`Saved ${selectedIndices.length} proposal(s) as todos!`);
   } catch (err) {
-    spinner.fail('Failed to save proposals as todos');
-    error((err as Error).message);
+    if ((err as Error).name === 'ExitPromptError') {
+      info('Selection cancelled');
+      return;
+    }
+    error(`Failed to save proposals as todos: ${(err as Error).message}`);
   }
 }
 
@@ -214,32 +242,41 @@ async function saveProposalsAsTodos(response: string, storagePath: string, linke
  * Parse and save proposal items as goals
  */
 async function saveProposalsAsGoals(response: string, storagePath: string, linkedGoalCodename: string | null = null): Promise<void> {
-  const spinner = ora('Saving proposals as goals...').start();
-
   try {
     // Extract numbered items from the response
-    // Look for lines starting with "1.", "2.", etc.
-    const lines = response.split('\n');
-    const proposals: string[] = [];
-
-    for (const line of lines) {
-      const match = line.match(/^\s*\d+\.\s+(.+)/);
-      if (match) {
-        proposals.push(match[1].trim());
-      }
-    }
+    const proposals = parseProposalItems(response);
 
     if (proposals.length === 0) {
-      spinner.warn('No numbered proposals found to save');
+      warn('No numbered proposals found to save');
       return;
     }
 
-    // Save each proposal as a goal
+    // Show interactive selection with all items checked by default
+    const choices = proposals.map((text, index) => ({
+      name: text,
+      value: index,
+      checked: true,
+    }));
+
+    const selectedIndices = await checkbox({
+      message: 'Select proposals to save as goals (Space to toggle, Enter to confirm):',
+      choices,
+    });
+
+    if (selectedIndices.length === 0) {
+      info('No items selected');
+      return;
+    }
+
+    // Save selected proposals as goals
+    const spinner = ora('Saving proposals as goals...').start();
     const date = getCurrentDate();
     const time = getCurrentTime();
     const filePath = join(storagePath, 'goals', `${date}.md`);
 
-    const goalsText = proposals.map((p, i) => `${i + 1}. ${p}`).join('\n');
+    // Build goals text from selected items
+    const selectedProposals = selectedIndices.map(i => proposals[i]);
+    const goalsText = selectedProposals.map((p, i) => `${i + 1}. ${p}`).join('\n');
     let entry = `## Proposed Goals (${time})\n\n${goalsText}`;
 
     // Add goal metadata if a goal was linked
@@ -249,10 +286,13 @@ async function saveProposalsAsGoals(response: string, storagePath: string, linke
 
     await appendToMarkdown(filePath, entry);
 
-    spinner.succeed(`Saved ${proposals.length} proposal(s) as goals!`);
+    spinner.succeed(`Saved ${selectedIndices.length} proposal(s) as goals!`);
   } catch (err) {
-    spinner.fail('Failed to save proposals as goals');
-    error((err as Error).message);
+    if ((err as Error).name === 'ExitPromptError') {
+      info('Selection cancelled');
+      return;
+    }
+    error(`Failed to save proposals as goals: ${(err as Error).message}`);
   }
 }
 
