@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { join } from 'path';
-import { input, checkbox } from '@inquirer/prompts';
+import { input, checkbox, select } from '@inquirer/prompts';
 import chalk from 'chalk';
 import {
   getStoragePath,
@@ -10,6 +10,9 @@ import {
   updateTodoStatus,
   removeTodoEntry,
   updateTodoText,
+  updateTodoPriority,
+  updateTodoGoal,
+  sortTodosByPriority,
   type TodoEntry,
 } from '../utils/storage.js';
 import { getCurrentDate, getCurrentTime, parseDate } from '../utils/date.js';
@@ -28,7 +31,8 @@ todoCommand
   .argument('<text>', 'Todo text')
   .option('-d, --date <date>', 'Date for the todo (YYYY-MM-DD)')
   .option('-g, --goal [keyword]', 'Link this todo to a goal (optional keyword for matching)')
-  .action(async (text: string, options: { date?: string; goal?: string | boolean }) => {
+  .option('-p, --priority <number>', 'Set priority (higher = more urgent)', '0')
+  .action(async (text: string, options: { date?: string; goal?: string | boolean; priority?: string }) => {
     try {
       const storagePath = await getStoragePath();
 
@@ -42,19 +46,36 @@ todoCommand
       const time = getCurrentTime();
       const filePath = join(storagePath, 'todos', `${date}.md`);
 
+      // Parse and validate priority
+      const priority = parseInt(options.priority || '0', 10);
+      if (isNaN(priority)) {
+        error('Priority must be a number');
+        return;
+      }
+
       // Handle goal linking if --goal flag is present
       const goalLinkResult = await linkToGoal({
         goalKeyword: options.goal,
         storagePath,
       });
 
-      // Build todo entry
-      const goalSuffix = goalLinkResult.codename ? ` (Goal: ${goalLinkResult.codename})` : '';
-      const entry = `## ${time}\n\n- [ ] ${text}${goalSuffix}`;
+      // Build todo entry with priority and goal metadata
+      let metadata = '';
+      if (priority > 0) {
+        metadata += ` (Priority: ${priority})`;
+      }
+      if (goalLinkResult.codename) {
+        metadata += ` (Goal: ${goalLinkResult.codename})`;
+      }
+      const entry = `## ${time}\n\n- [ ] ${text}${metadata}`;
 
       await appendToMarkdown(filePath, entry);
 
-      if (goalLinkResult.codename) {
+      if (priority > 0 && goalLinkResult.codename) {
+        success(`Todo added with priority ${priority} and linked to goal: ${goalLinkResult.codename}`);
+      } else if (priority > 0) {
+        success(`Todo added with priority ${priority}: "${text}"`);
+      } else if (goalLinkResult.codename) {
         success(`Todo added and linked to goal: ${goalLinkResult.codename}`);
       } else {
         if (options.goal && goalLinkResult.message !== 'No goal linking requested') {
@@ -111,13 +132,17 @@ todoCommand
         return;
       }
 
+      // Sort by priority (descending) then by timestamp (ascending)
+      entries = sortTodosByPriority(entries);
+
       // Plain text mode
       if (options.plain) {
         console.log(`\nTodos for ${date}:\n`);
         entries.forEach((entry, index) => {
           const checkbox = entry.completed ? '[x]' : '[ ]';
+          const priorityDisplay = entry.priority > 0 ? chalk.gray(` (Priority: ${entry.priority})`) : '';
           const goalDisplay = entry.goal ? chalk.gray(` (Goal: ${entry.goal})`) : '';
-          console.log(`${index + 1}. ${checkbox} ${entry.text}${goalDisplay}`);
+          console.log(`${index + 1}. ${checkbox} ${entry.text}${priorityDisplay}${goalDisplay}`);
         });
         return;
       }
@@ -275,6 +300,37 @@ todoCommand
   });
 
 /**
+ * Manage todos interactively
+ */
+todoCommand
+  .command('manage')
+  .description('Manage todos interactively with full CRUD operations')
+  .option('-d, --date <date>', 'Show todos for specific date (YYYY-MM-DD)')
+  .option('-g, --goal <codename>', 'Filter todos by goal codename')
+  .action(async (options: { date?: string; goal?: string }) => {
+    try {
+      const storagePath = await getStoragePath();
+      const date = options.date || getCurrentDate();
+
+      if (options.date && !parseDate(options.date)) {
+        error(`Invalid date format: ${options.date}. Use YYYY-MM-DD format.`);
+        return;
+      }
+
+      const filePath = join(storagePath, 'todos', `${date}.md`);
+
+      await interactiveTodoManagement(filePath, date, storagePath, options.goal);
+    } catch (err) {
+      if ((err as Error).name === 'ExitPromptError') {
+        info('Exited todo management');
+        return;
+      }
+      error(`Failed to manage todos: ${(err as Error).message}`);
+      throw err;
+    }
+  });
+
+/**
  * Interactive todo list with checkbox selection
  */
 async function interactiveTodoList(
@@ -286,9 +342,12 @@ async function interactiveTodoList(
   console.log(chalk.bold(`\nTodos for ${date}:\n`));
 
   const choices = incompleteTodos.map((entry, index) => {
+    const priorityDisplay = entry.priority > 0
+      ? chalk.yellow(`[P:${entry.priority}] `)
+      : '';
     const goalDisplay = entry.goal ? chalk.gray(` (Goal: ${entry.goal})`) : '';
     return {
-      name: `${entry.text}${goalDisplay}`,
+      name: `${priorityDisplay}${entry.text}${goalDisplay}`,
       value: index,
       checked: false,
     };
@@ -341,6 +400,189 @@ async function logTodoCompletion(todo: TodoEntry, storagePath: string): Promise<
   }
 
   await appendToMarkdown(historyPath, entry);
+}
+
+/**
+ * Interactive todo management interface
+ */
+async function interactiveTodoManagement(
+  filePath: string,
+  date: string,
+  storagePath: string,
+  goalFilter?: string
+): Promise<void> {
+  while (true) {
+    const content = await readMarkdown(filePath);
+
+    if (!content) {
+      info(`No todos to manage for ${date}`);
+      return;
+    }
+
+    let entries = parseTodoEntries(content);
+
+    // Filter by goal if specified
+    if (goalFilter) {
+      entries = entries.filter(e => e.goal === goalFilter);
+      if (entries.length === 0) {
+        info(`No todos found for goal: ${goalFilter}`);
+        return;
+      }
+    }
+
+    // Filter to incomplete todos only
+    const incompleteTodos = entries.filter(e => !e.completed);
+
+    if (incompleteTodos.length === 0) {
+      success('All todos completed!');
+      return;
+    }
+
+    // Sort by priority
+    const sortedTodos = sortTodosByPriority(incompleteTodos);
+
+    console.log(chalk.bold(`\nTodos for ${date}:\n`));
+
+    // Build choices for selection
+    const choices = sortedTodos.map((entry, index) => {
+      const priorityDisplay = entry.priority >= 5
+        ? chalk.red(`[P:${entry.priority}]`)
+        : entry.priority > 0
+        ? chalk.yellow(`[P:${entry.priority}]`)
+        : chalk.gray('[P:0]');
+
+      const goalDisplay = entry.goal ? chalk.gray(` (Goal: ${entry.goal})`) : '';
+      const truncatedText = entry.text.length > 60
+        ? entry.text.substring(0, 60) + '...'
+        : entry.text;
+
+      return {
+        name: `${entry.timestamp} | ${priorityDisplay} | ${truncatedText}${goalDisplay}`,
+        value: index,
+        description: entry.text,
+      };
+    });
+
+    // Add "Back" option
+    choices.push({
+      name: chalk.gray('← Back'),
+      value: -1,
+      description: 'Exit todo management',
+    });
+
+    const selectedIndex = await select({
+      message: 'Select a todo to manage:',
+      choices,
+    });
+
+    if (selectedIndex === -1) {
+      return;
+    }
+
+    const selectedTodo = sortedTodos[selectedIndex];
+
+    // Show action menu
+    const action = await select({
+      message: `What would you like to do with this todo?`,
+      choices: [
+        { name: '✓ Complete', value: 'complete' },
+        { name: '✗ Delete', value: 'delete' },
+        { name: '✏️ Edit', value: 'edit' },
+        { name: '⚡ Set Priority', value: 'priority' },
+        { name: '🎯 Link Goal', value: 'goal' },
+        { name: '← Cancel', value: 'cancel' },
+      ],
+    });
+
+    if (action === 'cancel') {
+      continue;
+    }
+
+    if (action === 'complete') {
+      const updatedTodo = await updateTodoStatus(filePath, selectedTodo.text, true);
+      if (updatedTodo) {
+        await logTodoCompletion(updatedTodo, storagePath);
+        await playCompletionAnimation(`Todo completed: "${updatedTodo.text}"`);
+        if (updatedTodo.goal) {
+          info(`Linked to goal: ${updatedTodo.goal}`);
+        }
+      } else {
+        error('Failed to complete todo');
+      }
+    } else if (action === 'delete') {
+      const removed = await removeTodoEntry(filePath, selectedTodo.text);
+      if (removed) {
+        success(`Todo deleted: "${removed.text}"`);
+      } else {
+        error('Failed to delete todo');
+      }
+    } else if (action === 'edit') {
+      const newText = await input({
+        message: 'Enter new todo text:',
+        default: selectedTodo.text,
+      });
+
+      if (newText.trim() === selectedTodo.text) {
+        info('No changes made');
+        continue;
+      }
+
+      const updated = await updateTodoText(filePath, selectedTodo.text, newText.trim());
+      if (updated) {
+        success(`Todo updated: "${updated.text}"`);
+      } else {
+        error('Failed to update todo');
+      }
+    } else if (action === 'priority') {
+      const priorityInput = await input({
+        message: 'Enter priority (number, higher = more urgent):',
+        default: selectedTodo.priority.toString(),
+        validate: (value) => {
+          const num = parseInt(value, 10);
+          if (isNaN(num)) return 'Priority must be a number';
+          return true;
+        },
+      });
+
+      const newPriority = parseInt(priorityInput, 10);
+      const updated = await updateTodoPriority(filePath, selectedTodo.text, newPriority);
+      if (updated) {
+        success(`Priority set to ${newPriority} for "${updated.text}"`);
+      } else {
+        error('Failed to set priority');
+      }
+    } else if (action === 'goal') {
+      const goalKeyword = await input({
+        message: 'Enter goal keyword for matching (or "remove" to unlink, empty for interactive):',
+        default: '',
+      });
+
+      if (goalKeyword.toLowerCase() === 'remove' || goalKeyword.toLowerCase() === 'none') {
+        const updated = await updateTodoGoal(filePath, selectedTodo.text, null);
+        if (updated) {
+          success('Goal link removed');
+        } else {
+          error('Failed to remove goal link');
+        }
+      } else {
+        const goalLinkResult = await linkToGoal({
+          goalKeyword: goalKeyword || undefined,
+          storagePath,
+        });
+
+        if (goalLinkResult.codename) {
+          const updated = await updateTodoGoal(filePath, selectedTodo.text, goalLinkResult.codename);
+          if (updated) {
+            success(`Todo linked to goal: ${goalLinkResult.codename}`);
+          } else {
+            error('Failed to link goal');
+          }
+        } else {
+          info(goalLinkResult.message);
+        }
+      }
+    }
+  }
 }
 
 export { todoCommand };

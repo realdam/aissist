@@ -477,6 +477,7 @@ export interface TodoEntry {
   text: string;
   completed: boolean;
   goal: string | null;
+  priority: number;
   rawEntry: string;
 }
 
@@ -500,7 +501,14 @@ function parseTodoEntry(entry: string): TodoEntry | null {
   if (!checkboxMatch) return null;
 
   const completed = checkboxMatch[1] === 'x';
-  const todoContent = checkboxMatch[2];
+  let todoContent = checkboxMatch[2];
+
+  // Extract priority if present: (Priority: N)
+  const priorityMatch = todoContent.match(/\(Priority:\s*(\d+)\)/i);
+  const priority = priorityMatch ? parseInt(priorityMatch[1], 10) : 0;
+  if (priorityMatch) {
+    todoContent = todoContent.replace(priorityMatch[0], '').trim();
+  }
 
   // Extract goal if present: (Goal: codename)
   const goalMatch = todoContent.match(/\(Goal:\s+([a-z0-9-]+)\)\s*$/);
@@ -512,6 +520,7 @@ function parseTodoEntry(entry: string): TodoEntry | null {
     text,
     completed,
     goal,
+    priority,
     rawEntry: trimmed,
   };
 }
@@ -525,6 +534,34 @@ export function parseTodoEntries(content: string): TodoEntry[] {
   // Split by ## headers
   const entries = content.split(/(?=^## )/gm).filter(e => e.trim());
   return entries.map(parseTodoEntry).filter((e): e is TodoEntry => e !== null);
+}
+
+/**
+ * Build todo metadata suffix (priority and goal)
+ */
+function buildTodoMetadata(priority: number, goal: string | null): string {
+  let metadata = '';
+  if (priority > 0) {
+    metadata += ` (Priority: ${priority})`;
+  }
+  if (goal) {
+    metadata += ` (Goal: ${goal})`;
+  }
+  return metadata;
+}
+
+/**
+ * Sort todos by priority (descending) then timestamp (ascending)
+ */
+export function sortTodosByPriority(todos: TodoEntry[]): TodoEntry[] {
+  return [...todos].sort((a, b) => {
+    // First by priority (higher priority first)
+    if (b.priority !== a.priority) {
+      return b.priority - a.priority;
+    }
+    // Then by timestamp (earlier first)
+    return a.timestamp.localeCompare(b.timestamp);
+  });
 }
 
 /**
@@ -556,8 +593,8 @@ export async function updateTodoStatus(
 
   // Build updated entry
   const checkbox = completed ? '[x]' : '[ ]';
-  const goalSuffix = todo.goal ? ` (Goal: ${todo.goal})` : '';
-  const newEntry = `## ${todo.timestamp}\n\n- ${checkbox} ${todo.text}${goalSuffix}`;
+  const metadata = buildTodoMetadata(todo.priority, todo.goal);
+  const newEntry = `## ${todo.timestamp}\n\n- ${checkbox} ${todo.text}${metadata}`;
 
   entries[todoIndex] = {
     ...todo,
@@ -635,12 +672,100 @@ export async function updateTodoText(
 
   // Build updated entry with new text
   const checkbox = todo.completed ? '[x]' : '[ ]';
-  const goalSuffix = todo.goal ? ` (Goal: ${todo.goal})` : '';
-  const newEntry = `## ${todo.timestamp}\n\n- ${checkbox} ${newText}${goalSuffix}`;
+  const metadata = buildTodoMetadata(todo.priority, todo.goal);
+  const newEntry = `## ${todo.timestamp}\n\n- ${checkbox} ${newText}${metadata}`;
 
   entries[todoIndex] = {
     ...todo,
     text: newText,
+    rawEntry: newEntry,
+  };
+
+  // Rebuild file content
+  const newContent = entries.map(e => e.rawEntry).join('\n\n');
+  await writeFile(filePath, newContent);
+
+  return entries[todoIndex];
+}
+
+/**
+ * Update todo priority
+ */
+export async function updateTodoPriority(
+  filePath: string,
+  indexOrText: number | string,
+  newPriority: number
+): Promise<TodoEntry | null> {
+  const content = await readMarkdown(filePath);
+  if (!content) return null;
+
+  const entries = parseTodoEntries(content);
+
+  let todoIndex: number;
+  if (typeof indexOrText === 'number') {
+    todoIndex = indexOrText;
+  } else {
+    todoIndex = entries.findIndex(e =>
+      e.text.toLowerCase().includes(indexOrText.toLowerCase())
+    );
+  }
+
+  if (todoIndex === -1 || todoIndex >= entries.length) return null;
+
+  const todo = entries[todoIndex];
+
+  // Build updated entry with new priority
+  const checkbox = todo.completed ? '[x]' : '[ ]';
+  const metadata = buildTodoMetadata(newPriority, todo.goal);
+  const newEntry = `## ${todo.timestamp}\n\n- ${checkbox} ${todo.text}${metadata}`;
+
+  entries[todoIndex] = {
+    ...todo,
+    priority: newPriority,
+    rawEntry: newEntry,
+  };
+
+  // Rebuild file content
+  const newContent = entries.map(e => e.rawEntry).join('\n\n');
+  await writeFile(filePath, newContent);
+
+  return entries[todoIndex];
+}
+
+/**
+ * Update todo goal linkage
+ */
+export async function updateTodoGoal(
+  filePath: string,
+  indexOrText: number | string,
+  newGoal: string | null
+): Promise<TodoEntry | null> {
+  const content = await readMarkdown(filePath);
+  if (!content) return null;
+
+  const entries = parseTodoEntries(content);
+
+  let todoIndex: number;
+  if (typeof indexOrText === 'number') {
+    todoIndex = indexOrText;
+  } else {
+    todoIndex = entries.findIndex(e =>
+      e.text.toLowerCase().includes(indexOrText.toLowerCase())
+    );
+  }
+
+  if (todoIndex === -1 || todoIndex >= entries.length) return null;
+
+  const todo = entries[todoIndex];
+
+  // Build updated entry with new goal
+  const checkbox = todo.completed ? '[x]' : '[ ]';
+  const metadata = buildTodoMetadata(todo.priority, newGoal);
+  const newEntry = `## ${todo.timestamp}\n\n- ${checkbox} ${todo.text}${metadata}`;
+
+  entries[todoIndex] = {
+    ...todo,
+    goal: newGoal,
     rawEntry: newEntry,
   };
 
