@@ -1,5 +1,5 @@
 # Aissist
-
+![alt text](image.png)
 A local-first, AI-powered CLI personal assistant for tracking goals, reflections, history, and contextual information. All your data stays on your machine in human-readable Markdown files.
 
 ## Features
