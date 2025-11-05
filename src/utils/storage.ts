@@ -87,6 +87,7 @@ export async function initializeStorage(basePath: string): Promise<void> {
   await ensureDirectory(join(basePath, 'context'));
   await ensureDirectory(join(basePath, 'reflections'));
   await ensureDirectory(join(basePath, 'todos'));
+  await ensureDirectory(join(basePath, 'proposals'));
 
   // Create default config if it doesn't exist
   const configPath = join(basePath, 'config.json');

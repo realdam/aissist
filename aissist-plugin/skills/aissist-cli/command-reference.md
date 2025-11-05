@@ -43,6 +43,7 @@ aissist init --global
 - `contexts/` - Context-specific information
 - `reflections/` - Guided reflection entries
 - `todos/` - Todo list management
+- `proposals/` - AI-generated proposal documents
 - `config.json` - Configuration settings
 
 ---
@@ -464,13 +465,34 @@ aissist propose [options] [timeframe]
 
 **Options:**
 - `--goal <codename>` - Propose actions for specific goal
+- `--reflect` - Prompt for a quick reflection before generating proposals
+- `--tag <tag>` - Filter by specific tag
+- `--context` - Include context files in the analysis
+- `--debug` - Display debug information (prompt, data summary)
 
 **Examples:**
 ```bash
 aissist propose  # Propose based on all data
 aissist propose "this week"  # Proposals for the week
 aissist propose --goal learn-typescript-fundamentals  # Goal-specific proposals
+aissist propose "next quarter" --tag work  # Tagged proposals
 ```
+
+**Post-Proposal Actions:**
+
+After generating proposals, you can:
+1. **Create TODOs (recommended)** - Convert proposal items into actionable todos
+2. **Save as goals** - Save proposals as new goal entries
+3. **Save as Markdown** - Export the full proposal to `proposals/YYYY-MM-DD.md` with metadata
+4. **Skip** - Don't save the proposals
+
+**Saved Proposal Format:**
+
+When saved as Markdown, proposals are stored in `proposals/YYYY-MM-DD.md` with:
+- Timestamp header
+- Metadata (timeframe, tag filters, goal links)
+- Full proposal text from Claude
+- Separator for multiple proposals on the same day
 
 **Requirements:**
 - Claude API key configured (`claude login`)

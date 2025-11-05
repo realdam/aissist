@@ -139,6 +139,7 @@ proposeCommand
           choices: [
             { name: 'Create TODOs (recommended)', value: 'todo' },
             { name: 'Save as goals', value: 'goal' },
+            { name: 'Save as Markdown', value: 'markdown' },
             { name: 'Skip', value: 'skip' },
           ],
           default: 'todo',
@@ -148,6 +149,8 @@ proposeCommand
           await saveProposalsAsTodos(response, storagePath, goalLinkResult.codename);
         } else if (action === 'goal') {
           await saveProposalsAsGoals(response, storagePath, goalLinkResult.codename);
+        } else if (action === 'markdown') {
+          await saveProposalAsMarkdown(response, storagePath, parsedTimeframe.label, options.tag, goalLinkResult.codename);
         } else {
           info('Proposals not saved');
         }
@@ -293,6 +296,46 @@ async function saveProposalsAsGoals(response: string, storagePath: string, linke
       return;
     }
     error(`Failed to save proposals as goals: ${(err as Error).message}`);
+  }
+}
+
+/**
+ * Save full proposal as Markdown file
+ */
+async function saveProposalAsMarkdown(
+  response: string,
+  storagePath: string,
+  timeframe: string,
+  tag: string | undefined,
+  linkedGoalCodename: string | null
+): Promise<void> {
+  try {
+    const spinner = ora('Saving proposal as Markdown...').start();
+    const date = getCurrentDate();
+    const time = getCurrentTime();
+    const filePath = join(storagePath, 'proposals', `${date}.md`);
+
+    // Build metadata header
+    let metadata = `**Timeframe:** ${timeframe}`;
+    if (tag) {
+      metadata += `\n**Tag:** #${tag}`;
+    }
+    if (linkedGoalCodename) {
+      metadata += `\n**Goal:** ${linkedGoalCodename}`;
+    }
+
+    // Format entry with horizontal rule separator if appending
+    const entry = `## Proposal at ${time}\n\n${metadata}\n\n${response}\n\n---`;
+
+    await appendToMarkdown(filePath, entry);
+
+    spinner.succeed(`Proposal saved to proposals/${date}.md`);
+  } catch (err) {
+    if ((err as Error).name === 'ExitPromptError') {
+      info('Cancelled');
+      return;
+    }
+    error(`Failed to save proposal as Markdown: ${(err as Error).message}`);
   }
 }
 
