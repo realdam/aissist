@@ -91,11 +91,14 @@ aissist goal add "Learn TypeScript fundamentals"
 # Add goal with deadline
 aissist goal add "Complete project proposal" --deadline "next Friday"
 
-# List goals interactively (checkbox UI)
+# List all active goals interactively
 aissist goal list
 
-# List goals in plain text
+# List all active goals in plain text
 aissist goal list --plain
+
+# View goals for specific date
+aissist goal list --date 2024-01-15
 
 # Complete a goal
 aissist goal complete <codename>
@@ -151,11 +154,11 @@ aissist history log "Finished TypeScript tutorial chapter 3" --goal learn-typesc
 # Import from GitHub
 aissist history log --from github
 
-# Show recent history
+# Show all history entries
 aissist history show
 
-# Show history for specific timeframe
-aissist history show --from "last week"
+# Show history for specific date
+aissist history show --date 2024-01-15
 ```
 
 **History Features:**

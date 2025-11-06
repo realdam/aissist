@@ -46,19 +46,23 @@ The system SHALL store goals in a structured Markdown format with codenames, tim
 ```markdown
 
 ### Requirement: Goal Visibility
-The system SHALL allow users to view their stored goals.
+The system SHALL allow users to view their stored goals, defaulting to all active goals unless a specific date is requested.
 
-#### Scenario: List today's goals
+#### Scenario: List all active goals by default
 - **WHEN** the user runs `aissist goal list`
-- **THEN** the system displays all goals from today's date
+- **THEN** the system displays all active (unfinished) goals from all dates
+- **AND** sorts goals by date (most recent first)
+- **AND** includes goals with codenames across all goal files
 
 #### Scenario: List goals for specific date
 - **WHEN** the user runs `aissist goal list --date YYYY-MM-DD`
-- **THEN** the system displays all goals from the specified date
+- **THEN** the system displays only goals from the specified date
+- **AND** behavior is unchanged from previous implementation
 
 #### Scenario: No goals found
-- **WHEN** no goals exist for the requested date
+- **WHEN** no active goals exist in any date file
 - **THEN** the system displays a message indicating no goals were found
+- **AND** suggests adding a goal with `aissist goal add`
 
 ### Requirement: Interactive Deadline Entry During Goal Creation
 The system SHALL prompt users to enter a deadline when adding a goal, with natural language support and "Tomorrow" as the default.

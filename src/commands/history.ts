@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { join } from 'path';
 import { input } from '@inquirer/prompts';
-import { getStoragePath, appendToMarkdown, readMarkdown } from '../utils/storage.js';
+import { getStoragePath, appendToMarkdown, readMarkdown, getAllHistory } from '../utils/storage.js';
 import { getCurrentDate as getDate, getCurrentTime, parseDate } from '../utils/date.js';
 import { success, error, info } from '../utils/cli.js';
 import { linkToGoal } from '../utils/goal-matcher.js';
@@ -71,28 +71,49 @@ historyCommand
 
 historyCommand
   .command('show')
-  .description('Show history entries')
+  .description('Show all history entries')
   .option('-d, --date <date>', 'Show history for specific date (YYYY-MM-DD)')
   .action(async (options) => {
     try {
       const storagePath = await getStoragePath();
-      const date = options.date || getCurrentDate();
 
-      if (options.date && !parseDate(options.date)) {
-        error(`Invalid date format: ${options.date}. Use YYYY-MM-DD format.`);
+      // Date-specific view
+      if (options.date) {
+        if (!parseDate(options.date)) {
+          error(`Invalid date format: ${options.date}. Use YYYY-MM-DD format.`);
+          return;
+        }
+
+        const filePath = join(storagePath, 'history', `${options.date}.md`);
+        const content = await readMarkdown(filePath);
+
+        if (!content) {
+          info(`No history found for ${options.date}`);
+          return;
+        }
+
+        console.log(`\nHistory for ${options.date}:\n`);
+        console.log(content);
         return;
       }
 
-      const filePath = join(storagePath, 'history', `${date}.md`);
-      const content = await readMarkdown(filePath);
+      // Default: show all history
+      const allHistory = await getAllHistory(storagePath);
 
-      if (!content) {
-        info(`No history found for ${date}`);
+      if (allHistory.length === 0) {
+        info('No history found');
+        info('Log history with: aissist history log <text>');
         return;
       }
 
-      console.log(`\nHistory for ${date}:\n`);
-      console.log(content);
+      console.log('\nAll History:\n');
+
+      // Display with date separators
+      for (const entry of allHistory) {
+        console.log(`## ${entry.date}\n`);
+        console.log(entry.content);
+        console.log('');
+      }
     } catch (err) {
       error(`Failed to show history: ${(err as Error).message}`);
       throw err;

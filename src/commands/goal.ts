@@ -11,6 +11,7 @@ import {
   completeGoalEntry,
   updateGoalDeadline,
   updateGoalDescription,
+  getActiveGoals,
   type GoalEntry,
 } from '../utils/storage.js';
 import { getCurrentDate, getCurrentTime, parseDate, formatDate } from '../utils/date.js';
@@ -120,43 +121,103 @@ goalCommand
 
 goalCommand
   .command('list')
-  .description('List goals (interactive mode by default)')
+  .description('List all active goals (interactive mode by default)')
   .option('-d, --date <date>', 'Show goals for specific date (YYYY-MM-DD)')
   .option('-p, --plain', 'Plain text output (non-interactive)')
   .action(async (options) => {
     try {
       const storagePath = await getStoragePath();
-      const date = options.date || getCurrentDate();
 
-      if (options.date && !parseDate(options.date)) {
-        error(`Invalid date format: ${options.date}. Use YYYY-MM-DD format.`);
+      // Date-specific view
+      if (options.date) {
+        if (!parseDate(options.date)) {
+          error(`Invalid date format: ${options.date}. Use YYYY-MM-DD format.`);
+          return;
+        }
+
+        const filePath = join(storagePath, 'goals', `${options.date}.md`);
+        const content = await readMarkdown(filePath);
+
+        if (!content) {
+          info(`No goals found for ${options.date}`);
+          return;
+        }
+
+        const entries = parseGoalEntries(content);
+
+        if (entries.length === 0) {
+          info(`No goals found for ${options.date}`);
+          return;
+        }
+
+        // Plain text mode
+        if (options.plain) {
+          console.log(`\nGoals for ${options.date}:\n`);
+          console.log(content);
+          return;
+        }
+
+        // Interactive mode for specific date
+        await interactiveGoalList(entries, filePath, options.date, storagePath);
         return;
       }
 
-      const filePath = join(storagePath, 'goals', `${date}.md`);
-      const content = await readMarkdown(filePath);
+      // Default: show all active goals
+      const activeGoals = await getActiveGoals(storagePath);
 
-      if (!content) {
-        info(`No goals found for ${date}`);
+      if (activeGoals.length === 0) {
+        info('No active goals found');
+        info('Add a goal with: aissist goal add <text>');
         return;
       }
 
-      const entries = parseGoalEntries(content);
+      // Convert ActiveGoal[] to GoalEntry[] format for display
+      const entries: GoalEntry[] = activeGoals.map(goal => ({
+        timestamp: goal.timestamp,
+        codename: goal.codename,
+        text: goal.text,
+        deadline: goal.deadline,
+        description: goal.description,
+        rawEntry: goal.rawEntry,
+      }));
 
-      if (entries.length === 0) {
-        info(`No goals found for ${date}`);
-        return;
-      }
+      // Sort by deadline (earliest first, no deadline goes last)
+      entries.sort((a, b) => {
+        if (!a.deadline && !b.deadline) return 0;
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return a.deadline.localeCompare(b.deadline);
+      });
 
-      // Plain text mode
+      // Plain text mode - group by date
       if (options.plain) {
-        console.log(`\nGoals for ${date}:\n`);
-        console.log(content);
+        console.log('\nAll Active Goals:\n');
+
+        // Group by date
+        const goalsByDate = new Map<string, GoalEntry[]>();
+        for (const goal of entries) {
+          const date = goal.timestamp.split(' ')[0];
+          if (!goalsByDate.has(date)) {
+            goalsByDate.set(date, []);
+          }
+          goalsByDate.get(date)!.push(goal);
+        }
+
+        // Sort dates (newest first)
+        const sortedDates = Array.from(goalsByDate.keys()).sort().reverse();
+
+        for (const date of sortedDates) {
+          console.log(`## ${date}\n`);
+          for (const goal of goalsByDate.get(date)!) {
+            console.log(goal.rawEntry);
+            console.log('');
+          }
+        }
         return;
       }
 
-      // Interactive mode
-      await interactiveGoalList(entries, filePath, date, storagePath);
+      // Interactive mode for all goals
+      await interactiveGoalList(entries, '', 'all dates', storagePath);
     } catch (err) {
       error(`Failed to list goals: ${(err as Error).message}`);
       throw err;
@@ -323,16 +384,21 @@ async function interactiveGoalList(
     return;
   }
 
+  // Determine the correct file path for the goal
+  // If filePath is empty, we're in "all goals" mode and need to extract date from timestamp
+  const goalFilePath = filePath || join(storagePath, 'goals', `${selectedGoal.timestamp.split(' ')[0]}.md`);
+  const goalDate = date === 'all dates' ? selectedGoal.timestamp.split(' ')[0] : date;
+
   if (action === 'complete') {
-    const destPath = join(storagePath, 'goals', 'finished', `${date}.md`);
-    const completed = await completeGoalEntry(filePath, destPath, selectedGoal.codename);
+    const destPath = join(storagePath, 'goals', 'finished', `${goalDate}.md`);
+    const completed = await completeGoalEntry(goalFilePath, destPath, selectedGoal.codename);
     if (completed) {
       success(`Goal '${selectedGoal.codename}' completed! 🎉`);
     } else {
       error('Failed to complete goal');
     }
   } else if (action === 'delete') {
-    const removed = await removeGoalEntry(filePath, selectedGoal.codename);
+    const removed = await removeGoalEntry(goalFilePath, selectedGoal.codename);
     if (removed) {
       success(`Goal '${selectedGoal.codename}' deleted`);
     } else {
@@ -348,7 +414,7 @@ async function interactiveGoalList(
       },
     });
 
-    const updated = await updateGoalDeadline(filePath, selectedGoal.codename, deadlineDate);
+    const updated = await updateGoalDeadline(goalFilePath, selectedGoal.codename, deadlineDate);
     if (updated) {
       success(`Deadline set for '${selectedGoal.codename}': ${deadlineDate}`);
     } else {
@@ -361,7 +427,7 @@ async function interactiveGoalList(
       default: currentDescription,
     });
 
-    const updated = await updateGoalDescription(filePath, selectedGoal.codename, descriptionText);
+    const updated = await updateGoalDescription(goalFilePath, selectedGoal.codename, descriptionText);
     if (updated) {
       if (descriptionText.trim()) {
         success(`Description updated for '${selectedGoal.codename}'`);

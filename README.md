@@ -144,19 +144,19 @@ aissist goal add "Complete project proposal"
 # Add goal with deadline flag (no prompt)
 aissist goal add "Launch MVP" --deadline 2025-11-15
 
-# Interactive list (select goal and choose action)
+# List all active goals (interactive mode)
 aissist goal list
 
-# Plain text view (for legacy goals)
+# List all active goals (plain text)
 aissist goal list --plain
+
+# View goals from specific date
+aissist goal list --date 2024-01-15
 
 # Direct commands
 aissist goal complete complete-project-proposal
 aissist goal deadline launch-mvp 2025-12-01
 aissist goal remove launch-mvp
-
-# View goals from specific date
-aissist goal list --date 2024-01-15
 
 # Natural language deadline examples
 aissist goal add "Quarterly review"        # Then enter: this quarter
@@ -192,12 +192,16 @@ Track daily activities and events.
 
 **Subcommands:**
 - `log <text>` - Log a history entry
-- `show [--date <date>]` - Show history for today or specific date
+- `show [--date <date>]` - Show all history entries (or specific date)
 
 **Examples:**
 ```bash
 aissist history log "Fixed bug in authentication flow"
+
+# Show all history entries
 aissist history show
+
+# View history for specific date
 aissist history show --date 2024-01-15
 ```
 

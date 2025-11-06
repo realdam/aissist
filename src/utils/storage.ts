@@ -459,6 +459,10 @@ export interface ActiveGoal {
   codename: string;
   text: string;
   date: string;
+  timestamp: string;
+  deadline: string | null;
+  description: string | null;
+  rawEntry: string;
 }
 
 /**
@@ -488,6 +492,10 @@ async function getGoalsFromPath(storagePath: string): Promise<ActiveGoal[]> {
             codename: entry.codename,
             text: entry.text,
             date,
+            timestamp: entry.timestamp,
+            deadline: entry.deadline,
+            description: entry.description,
+            rawEntry: entry.rawEntry,
           });
         }
       }
@@ -526,6 +534,45 @@ export async function getActiveGoals(storagePath: string): Promise<ActiveGoal[]>
   }
 
   return mergedGoals;
+}
+
+/**
+ * History entry interface for getAllHistory
+ */
+export interface HistoryEntry {
+  date: string;
+  content: string;
+}
+
+/**
+ * Get all history entries across all dates
+ * Returns entries sorted chronologically (newest first)
+ */
+export async function getAllHistory(storagePath: string): Promise<HistoryEntry[]> {
+  const historyDir = join(storagePath, 'history');
+  const allHistory: HistoryEntry[] = [];
+
+  try {
+    const files = await readdir(historyDir);
+    const mdFiles = files.filter(f => f.endsWith('.md')).sort().reverse(); // Most recent first
+
+    for (const file of mdFiles) {
+      const filePath = join(historyDir, file);
+      const content = await readMarkdown(filePath);
+
+      if (content) {
+        const date = file.replace('.md', '');
+        allHistory.push({
+          date,
+          content,
+        });
+      }
+    }
+  } catch (_error) {
+    // History directory doesn't exist or is empty
+  }
+
+  return allHistory;
 }
 
 /**
