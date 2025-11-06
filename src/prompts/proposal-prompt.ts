@@ -16,6 +16,9 @@ export function buildProposalPrompt(options: ProposalPromptOptions): string {
 
   const sections: string[] = [];
 
+  // Detect "now" mode for immediate action
+  const isNowMode = timeframe.label === 'Right Now';
+
   // Header section
   sections.push(`# Generate Actionable Proposals for ${timeframe.label}`);
   sections.push('');
@@ -49,12 +52,22 @@ export function buildProposalPrompt(options: ProposalPromptOptions): string {
   sections.push('');
   sections.push('1. **Analyze** the user\'s goals, history, and reflections using the `Read` and `Grep` tools');
   sections.push('2. **Identify patterns** in their activities, progress, and challenges');
-  sections.push('3. **Generate 3-5 actionable proposals** for what the user should focus on during the specified timeframe');
-  sections.push('4. **Prioritize** based on:');
-  sections.push('   - Goal alignment and deadlines');
-  sections.push('   - Recent patterns and momentum');
-  sections.push('   - Reflection insights and lessons learned');
-  sections.push('   - Timeframe constraints (short-term vs. long-term)');
+
+  if (isNowMode) {
+    sections.push('3. **Generate exactly 1 actionable proposal** for what the user should do RIGHT NOW (within the next 1-2 hours)');
+    sections.push('4. **Prioritize** based on:');
+    sections.push('   - **Urgency**: What needs attention immediately');
+    sections.push('   - **Feasibility**: Can be completed in 1-2 hours');
+    sections.push('   - **Impact**: Makes meaningful progress on goals');
+    sections.push('   - **Current momentum**: Aligns with recent activity patterns');
+  } else {
+    sections.push('3. **Generate 3-5 actionable proposals** for what the user should focus on during the specified timeframe');
+    sections.push('4. **Prioritize** based on:');
+    sections.push('   - Goal alignment and deadlines');
+    sections.push('   - Recent patterns and momentum');
+    sections.push('   - Reflection insights and lessons learned');
+    sections.push('   - Timeframe constraints (short-term vs. long-term)');
+  }
   sections.push('');
 
   // Tool usage guidance
@@ -74,27 +87,47 @@ export function buildProposalPrompt(options: ProposalPromptOptions): string {
   sections.push('');
   sections.push('Please structure your response as follows:');
   sections.push('');
-  sections.push('```');
-  sections.push('🎯 Proposed Plan for [Timeframe]:');
-  sections.push('');
-  sections.push('1. [First actionable proposal]');
-  sections.push('2. [Second actionable proposal]');
-  sections.push('3. [Third actionable proposal]');
-  sections.push('4. [Fourth actionable proposal] (optional)');
-  sections.push('5. [Fifth actionable proposal] (optional)');
-  sections.push('');
-  sections.push('[Optional: Brief reasoning or context for your recommendations]');
-  sections.push('```');
+
+  if (isNowMode) {
+    sections.push('```');
+    sections.push('🎯 Proposed Plan for Right Now:');
+    sections.push('');
+    sections.push('▶️ [Single actionable item that can be completed in 1-2 hours]');
+    sections.push('');
+    sections.push('[Brief context: Why this is the most urgent/important immediate action]');
+    sections.push('```');
+  } else {
+    sections.push('```');
+    sections.push('🎯 Proposed Plan for [Timeframe]:');
+    sections.push('');
+    sections.push('1. [First actionable proposal]');
+    sections.push('2. [Second actionable proposal]');
+    sections.push('3. [Third actionable proposal]');
+    sections.push('4. [Fourth actionable proposal] (optional)');
+    sections.push('5. [Fifth actionable proposal] (optional)');
+    sections.push('');
+    sections.push('[Optional: Brief reasoning or context for your recommendations]');
+    sections.push('```');
+  }
   sections.push('');
 
   // Additional guidance
   sections.push('## Tips');
   sections.push('');
-  sections.push('- Be specific and actionable (e.g., "Complete X by date Y" rather than "Work on X")');
-  sections.push('- Consider the timeframe length (short-term vs. long-term planning)');
-  sections.push('- Look for unfinished goals, recurring themes, and missed patterns');
-  sections.push('- Balance ambition with realism based on the user\'s history');
-  sections.push('- Surface insights from reflections that might inform better decisions');
+
+  if (isNowMode) {
+    sections.push('- Be **extremely specific** about the single action (e.g., "Draft introduction section for API docs" not "Work on documentation")');
+    sections.push('- Focus on **immediate feasibility** - can this realistically be done in 1-2 hours?');
+    sections.push('- Choose the **most urgent** item based on deadlines, blockers, or momentum');
+    sections.push('- Consider what gives the **best immediate return** on time invested');
+    sections.push('- If multiple urgent items exist, pick the one that **unblocks other work** or has the nearest deadline');
+  } else {
+    sections.push('- Be specific and actionable (e.g., "Complete X by date Y" rather than "Work on X")');
+    sections.push('- Consider the timeframe length (short-term vs. long-term planning)');
+    sections.push('- Look for unfinished goals, recurring themes, and missed patterns');
+    sections.push('- Balance ambition with realism based on the user\'s history');
+    sections.push('- Surface insights from reflections that might inform better decisions');
+  }
   sections.push('');
 
   // Edge case: no data

@@ -167,8 +167,9 @@ aissist recall "what did I learn about TypeScript?"
 aissist recall "show my progress on fitness goals"
 
 # Generate action proposals
-aissist propose
-aissist propose "this week"
+aissist propose now         # Get 1 immediate action (1-2 hours)
+aissist propose             # Daily proposals
+aissist propose "this week" # Weekly proposals
 ```
 
 ### Claude Code Plugin Commands
@@ -287,10 +288,12 @@ aissist recall "progress on <goal>"  # AI-powered progress review
 ```
 
 **Weekly Planning:**
+
 ```bash
 aissist reflect --from "this week"  # Reflect on the week
 aissist propose  # Get AI-generated action proposals
 ```
+
 
 ## Error Handling
 

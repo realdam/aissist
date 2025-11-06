@@ -6,29 +6,11 @@ TBD - created by archiving change add-ai-propose-command. Update Purpose after a
 ### Requirement: Timeframe Parsing
 The system SHALL parse natural language timeframe expressions into date ranges for proposal scoping.
 
-#### Scenario: Default to today
-- **WHEN** the user runs `aissist propose` without arguments
-- **THEN** the system uses today's date as the default timeframe
-
-#### Scenario: Parse relative week expressions
-- **WHEN** the user runs `aissist propose "this week"` or `"next week"`
-- **THEN** the system calculates the ISO week boundaries and returns the date range
-
-#### Scenario: Parse quarter expressions
-- **WHEN** the user runs `aissist propose "this quarter"`, `"next quarter"`, or `"2026 Q1"`
-- **THEN** the system calculates the quarter start and end dates
-
-#### Scenario: Parse month expressions
-- **WHEN** the user runs `aissist propose "November 2025"` or `"next month"`
-- **THEN** the system calculates the month boundaries
-
-#### Scenario: Parse relative day expressions
-- **WHEN** the user runs `aissist propose "tomorrow"` or `"next 3 days"`
-- **THEN** the system calculates the appropriate date range from today
-
-#### Scenario: Invalid timeframe expression
-- **WHEN** the user provides an unparseable timeframe
-- **THEN** the system displays an error message with example formats and exits
+#### Scenario: Parse "now" expression (ADDED)
+- **WHEN** the user runs `aissist propose now`
+- **THEN** the system recognizes "now" as a special immediate-action timeframe
+- **AND** returns a timeframe spanning the current moment to 2 hours ahead
+- **AND** sets the label to "Right Now"
 
 ### Requirement: Data Aggregation for Proposals
 The system SHALL load and aggregate relevant data from storage based on the specified timeframe.
@@ -60,30 +42,16 @@ The system SHALL load and aggregate relevant data from storage based on the spec
 ### Requirement: Claude-Powered Proposal Generation
 The system SHALL generate actionable proposals using Claude Code CLI with file analysis tools.
 
-#### Scenario: Build context-rich prompt
+#### Scenario: Build context-rich prompt (MODIFIED)
 - **WHEN** invoking Claude for proposal generation
 - **THEN** the system constructs a prompt including:
-  - Timeframe context (e.g., "planning for Q1 2026")
+  - Timeframe context (e.g., "planning for Q1 2026", or "immediate action for Right Now")
   - Summary of goals (count and key themes)
   - Recent history patterns (frequency, topics)
   - Available reflections
-  - Instruction to analyze data and propose 3-5 actionable items
-
-#### Scenario: Invoke Claude Code with file tools
-- **WHEN** generating a proposal
-- **THEN** the system executes: `claude -p "<prompt>" --allowedTools 'Grep,Read,Glob'` with the storage directory in scope
-
-#### Scenario: Stream proposal output
-- **WHEN** Claude Code processes the proposal request
-- **THEN** the system displays a spinner and streams the response to the user
-
-#### Scenario: Handle Claude Code unavailable
-- **WHEN** Claude Code CLI is not installed or not authenticated
-- **THEN** the system displays an error message with installation/authentication instructions and exits
-
-#### Scenario: Proposal generation error
-- **WHEN** the Claude Code subprocess fails or returns an error
-- **THEN** the system logs the error and displays a user-friendly message
+  - Instruction to analyze data and propose:
+    - **3-5 actionable items** for standard timeframes
+    - **Exactly 1 actionable item** for "now" timeframe, optimized for 1-2 hour completion
 
 ### Requirement: Interactive Proposal Follow-up
 The system SHALL offer interactive actions after displaying the proposal.
@@ -108,17 +76,16 @@ The system SHALL offer interactive actions after displaying the proposal.
 ### Requirement: Structured Proposal Output
 The system SHALL format proposal output in a clear, actionable structure.
 
-#### Scenario: Display proposal header
+#### Scenario: Display proposal header (MODIFIED)
 - **WHEN** outputting a proposal
 - **THEN** the system displays a header: `🎯 Proposed Plan for <timeframe>:`
+- **AND** for "now" timeframe, the header uses the label "Right Now"
 
-#### Scenario: Display numbered action items
-- **WHEN** Claude generates proposal items
-- **THEN** the system displays them as a numbered list (e.g., "1. Finalize MVP", "2. Start learning path")
-
-#### Scenario: Include context or reasoning
-- **WHEN** Claude provides reasoning for proposals
-- **THEN** the system includes brief explanations or highlights from the analysis
+#### Scenario: Display single action for "now" timeframe (ADDED)
+- **WHEN** Claude generates a proposal for "now" timeframe
+- **THEN** the system displays exactly one action item
+- **AND** the action is formatted as: "▶️ [action description]"
+- **AND** includes brief context on why this is the most urgent/important immediate action
 
 ### Requirement: Optional Reflection Integration
 The system SHALL support optional reflection prompts before generating proposals.
@@ -272,4 +239,27 @@ The Claude Code plugin SHALL provide a `/aissist:todo` slash command that integr
 - **THEN** the command displays a clear error message
 - **AND** provides instructions: "Run: npm install -g aissist && aissist init --global"
 - **AND** does not attempt to create any todos
+
+### Requirement: Parse "now" Timeframe
+The system SHALL recognize "now" as a special timeframe for immediate action planning.
+
+#### Scenario: User provides "now" timeframe
+- **WHEN** the user runs `aissist propose now`
+- **THEN** the system parses "now" as a timeframe with:
+  - Start: current timestamp
+  - End: 2 hours from current timestamp
+  - Label: "Right Now"
+
+#### Scenario: "now" timeframe in proposal prompt
+- **WHEN** building a proposal prompt with "now" timeframe
+- **THEN** the system adjusts the prompt to:
+  - Request exactly 1 actionable proposal (not 3-5)
+  - Emphasize immediate action (completable within 1-2 hours)
+  - Prioritize by urgency and feasibility for short-duration tasks
+  - Focus on single next step rather than comprehensive planning
+
+#### Scenario: Invalid timeframe still shows "now" option
+- **WHEN** the user provides an invalid timeframe
+- **THEN** the error message includes "now" in the supported formats list:
+  - "- now (single immediate action)"
 

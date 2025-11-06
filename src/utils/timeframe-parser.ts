@@ -26,6 +26,15 @@ export function parseTimeframe(input?: string): TimeframeResult {
   const now = new Date();
   const normalized = input?.toLowerCase().trim() || 'today';
 
+  // Handle "now"
+  if (normalized === 'now') {
+    return {
+      start: now,
+      end: addDays(now, 0.0833), // 2 hours (2/24 = 0.0833 days)
+      label: 'Right Now'
+    };
+  }
+
   // Handle "today"
   if (normalized === 'today' || normalized === '') {
     return {
@@ -156,6 +165,7 @@ export function parseTimeframe(input?: string): TimeframeResult {
   throw new Error(
     `Invalid timeframe: "${input}"\n\n` +
     'Supported formats:\n' +
+    '  - now (single immediate action)\n' +
     '  - today, tomorrow\n' +
     '  - this week, next week\n' +
     '  - this quarter, next quarter\n' +

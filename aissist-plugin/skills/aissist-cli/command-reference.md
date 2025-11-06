@@ -472,15 +472,27 @@ aissist propose [options] [timeframe]
 
 **Examples:**
 ```bash
+aissist propose now  # Get exactly 1 immediate action (1-2 hours)
 aissist propose  # Propose based on all data
 aissist propose "this week"  # Proposals for the week
 aissist propose --goal learn-typescript-fundamentals  # Goal-specific proposals
 aissist propose "next quarter" --tag work  # Tagged proposals
 ```
 
+**Timeframe Options:**
+
+- `now` - Returns exactly 1 immediate action item (completable in 1-2 hours)
+- `today`, `tomorrow` - Daily planning
+- `this week`, `next week` - Weekly planning
+- `this month`, `next month` - Monthly planning
+- `this quarter`, `next quarter`, `2026 Q1` - Quarterly planning
+- `next N days` (e.g., `next 7 days`) - Custom day ranges
+- `YYYY-MM-DD` - Specific date
+
 **Post-Proposal Actions:**
 
 After generating proposals, you can:
+
 1. **Create TODOs (recommended)** - Convert proposal items into actionable todos
 2. **Save as goals** - Save proposals as new goal entries
 3. **Save as Markdown** - Export the full proposal to `proposals/YYYY-MM-DD.md` with metadata
