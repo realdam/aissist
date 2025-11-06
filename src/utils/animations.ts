@@ -45,7 +45,7 @@ export async function playCompletionAnimation(
       }
       return;
     }
-  } catch (error) {
+  } catch (_error) {
     // If we can't read config, default to showing animation
     // This ensures backwards compatibility and graceful degradation
   }

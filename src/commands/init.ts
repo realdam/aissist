@@ -91,13 +91,13 @@ export async function initCommand(options: InitOptions): Promise<void> {
               // Create first todo with goal pre-linked
               await createTodoInteractive({ goal: goalResult.codename });
             }
-          } catch (err) {
+          } catch (_err) {
             // User cancelled todo prompt with Ctrl+C - gracefully exit
             info('');
           }
         }
       }
-    } catch (err) {
+    } catch (_err) {
       // User cancelled goal prompt with Ctrl+C - gracefully exit
       info('');
     }

@@ -48,7 +48,7 @@ export async function createTodoInteractive(options: TodoCreationOptions = {}): 
             return true;
           },
         });
-      } catch (err) {
+      } catch (_err) {
         // User cancelled (Ctrl+C)
         return { success: false, error: 'cancelled' };
       }
@@ -83,7 +83,7 @@ export async function createTodoInteractive(options: TodoCreationOptions = {}): 
             priority = parsed;
           }
         }
-      } catch (err) {
+      } catch (_err) {
         // User cancelled (Ctrl+C) during priority prompt
         return { success: false, error: 'cancelled' };
       }

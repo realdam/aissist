@@ -449,7 +449,7 @@ export async function getActiveGoals(storagePath: string): Promise<ActiveGoal[]>
         }
       }
     }
-  } catch (error) {
+  } catch (_error) {
     // Goals directory doesn't exist or is empty
   }
 

@@ -48,7 +48,7 @@ export async function createGoalInteractive(options: GoalCreationOptions = {}): 
             return true;
           },
         });
-      } catch (err) {
+      } catch (_err) {
         // User cancelled (Ctrl+C)
         return { success: false, error: 'cancelled' };
       }
@@ -86,7 +86,7 @@ export async function createGoalInteractive(options: GoalCreationOptions = {}): 
           const parsedTimeframe = parseTimeframe(trimmed);
           deadlineDate = formatDate(parsedTimeframe.end);
         }
-      } catch (err) {
+      } catch (_err) {
         // User cancelled (Ctrl+C) during deadline prompt
         return { success: false, error: 'cancelled', codename };
       }

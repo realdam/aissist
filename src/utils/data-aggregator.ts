@@ -104,7 +104,7 @@ async function loadGoals(storagePath: string, tag?: string): Promise<GoalFile[]>
         content
       });
     }
-  } catch (error) {
+  } catch (_error) {
     // Goals directory doesn't exist or is empty
   }
 
@@ -150,7 +150,7 @@ async function loadHistory(
         content
       });
     }
-  } catch (error) {
+  } catch (_error) {
     // History directory doesn't exist or is empty
   }
 
@@ -190,7 +190,7 @@ async function loadReflections(
         content
       });
     }
-  } catch (error) {
+  } catch (_error) {
     // Reflections directory doesn't exist or is empty
   }
 
@@ -231,7 +231,7 @@ async function loadContext(storagePath: string, tag?: string): Promise<ContextFi
         }
       }
     }
-  } catch (error) {
+  } catch (_error) {
     // Context directory doesn't exist or is empty
   }
 

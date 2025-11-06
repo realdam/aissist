@@ -108,7 +108,7 @@ goalCommand
           // Create todo with goal pre-linked
           await createTodoInteractive({ goal: codename });
         }
-      } catch (err) {
+      } catch (_err) {
         // User cancelled todo prompt with Ctrl+C - gracefully exit
         // Goal is already saved, so we just exit
       }

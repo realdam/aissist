@@ -174,7 +174,10 @@ async function importFromGitHub(timeframeInput: string): Promise<void> {
         if (!entriesByDate.has(entry.date)) {
           entriesByDate.set(entry.date, []);
         }
-        entriesByDate.get(entry.date)!.push(entry.content);
+        const dateEntries = entriesByDate.get(entry.date);
+        if (dateEntries) {
+          dateEntries.push(entry.content);
+        }
       }
 
       for (const [date, contents] of entriesByDate) {

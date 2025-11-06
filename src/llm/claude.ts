@@ -351,7 +351,7 @@ Respond with ONLY the codename, nothing else.`;
     }
 
     return codename;
-  } catch (err) {
+  } catch (_err) {
     // Fallback to simple generation if Claude fails
     console.error('Claude codename generation failed, using fallback');
     return generateFallbackCodename(goalText, existingCodenames);
