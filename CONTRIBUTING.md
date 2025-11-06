@@ -227,15 +227,180 @@ describe('myFunction', () => {
 ### Git Workflow
 
 - Keep commits atomic (one logical change per commit)
-- Write clear commit messages:
-  ```
-  Add feature: Brief description
-
-  Detailed explanation of what changed and why.
-  Closes #123
-  ```
+- Use conventional commit format (see below)
 - Rebase your branch on upstream main before submitting PR
 - Squash commits if requested during review
+
+### Conventional Commits
+
+We use [Conventional Commits](https://www.conventionalcommits.org/) for automated changelog generation and semantic versioning.
+
+**Format**: `<type>(<scope>): <description>`
+
+**Types**:
+- `feat`: New feature (triggers minor version bump)
+- `fix`: Bug fix (triggers patch version bump)
+- `docs`: Documentation only changes
+- `style`: Code style changes (formatting, missing semi-colons, etc.)
+- `refactor`: Code change that neither fixes a bug nor adds a feature
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks, dependency updates, etc.
+
+**Breaking Changes**: Add `!` after type or include `BREAKING CHANGE:` in footer (triggers major version bump)
+
+**Examples**:
+```bash
+# New feature
+git commit -m "feat(chat): add conversational assistant command"
+
+# Bug fix
+git commit -m "fix(todo): resolve priority sorting issue"
+
+# Documentation
+git commit -m "docs(readme): update installation instructions"
+
+# Breaking change
+git commit -m "feat(api)!: change storage format to JSON"
+git commit -m "refactor(cli): restructure command interface
+
+BREAKING CHANGE: Command syntax has changed. See migration guide."
+
+# With scope
+git commit -m "feat(goal): add deadline support"
+git commit -m "fix(recall): improve search accuracy"
+
+# Without scope
+git commit -m "chore: update dependencies"
+git commit -m "test: add integration tests"
+```
+
+**Scopes** (optional but recommended):
+- `cli`: CLI infrastructure
+- `goal`: Goal management
+- `todo`: Todo management
+- `history`: History logging
+- `context`: Context management
+- `recall`: Semantic recall
+- `reflect`: Reflection system
+- `plugin`: Claude Code plugin
+- `chat`: Chat command
+- `log`: Logging commands
+
+## Release Process
+
+### For Maintainers
+
+Aissist uses automated GitHub Actions workflows to handle releases. When you push a version tag, the system automatically:
+- Updates version numbers across all files
+- Generates a changelog from commits
+- Builds and tests the code
+- Publishes to npm
+- Creates a GitHub release
+
+#### Creating a Release
+
+1. **Ensure main branch is ready**:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+2. **Verify tests pass locally**:
+   ```bash
+   npm test
+   npm run build
+   npm run lint
+   ```
+
+3. **Create and push a version tag**:
+   ```bash
+   # For a new feature release (minor version)
+   git tag -a v1.1.0 -m "Release 1.1.0"
+
+   # For a bug fix release (patch version)
+   git tag -a v1.0.1 -m "Release 1.0.1"
+
+   # For a breaking change (major version)
+   git tag -a v2.0.0 -m "Release 2.0.0"
+
+   # Push the tag to trigger the release
+   git push origin v1.1.0
+   ```
+
+4. **Monitor the release workflow**:
+   - Go to GitHub Actions tab
+   - Watch the "Release" workflow progress
+   - Verify all steps complete successfully
+
+5. **Verify the release**:
+   - Check npm: `npm view aissist@latest version`
+   - Check GitHub Releases page
+   - Test installation: `npm install -g aissist@<version>`
+
+#### Version Numbering
+
+Follow [Semantic Versioning](https://semver.org/):
+- **MAJOR** (v2.0.0): Breaking changes, incompatible API changes
+- **MINOR** (v1.1.0): New features, backward-compatible
+- **PATCH** (v1.0.1): Bug fixes, backward-compatible
+
+Pre-release versions:
+```bash
+git tag -a v1.1.0-beta.1 -m "Beta release 1.1.0-beta.1"
+git tag -a v1.1.0-rc.1 -m "Release candidate 1.1.0-rc.1"
+```
+
+#### Required Secrets
+
+The release workflow requires the following GitHub repository secrets:
+
+**NPM_TOKEN** (required for npm publishing):
+1. Log in to [npmjs.com](https://www.npmjs.com/)
+2. Go to Access Tokens → Generate New Token
+3. Select "Automation" token type
+4. Copy the generated token
+5. In GitHub repository: Settings → Secrets and variables → Actions
+6. Click "New repository secret"
+7. Name: `NPM_TOKEN`
+8. Value: paste the token
+9. Click "Add secret"
+
+**GITHUB_TOKEN** (automatically provided):
+- GitHub automatically provides this token
+- No manual configuration needed
+- Used for creating GitHub releases
+
+#### Troubleshooting Releases
+
+**Release workflow fails at npm publish**:
+- Verify NPM_TOKEN secret is configured
+- Check token has publish permissions
+- Ensure package name isn't taken
+- Verify version doesn't already exist on npm
+
+**Release workflow fails at tests**:
+- Run tests locally: `npm test`
+- Fix failing tests before retrying
+- Delete the tag: `git tag -d v1.0.0 && git push origin :refs/tags/v1.0.0`
+- Fix issues and create tag again
+
+**Version mismatch between files**:
+- The `scripts/update-version.js` script ensures synchronization
+- Manually verify: `package.json`, `aissist-plugin/.claude-plugin/plugin.json`, `aissist-plugin/.claude-plugin/marketplace.json`
+
+**Rolling back a release**:
+```bash
+# Delete the git tag locally and remotely
+git tag -d v1.0.0
+git push origin :refs/tags/v1.0.0
+
+# Deprecate the npm package (don't unpublish)
+npm deprecate aissist@1.0.0 "This version has been deprecated"
+
+# Delete GitHub release (via GitHub UI or gh CLI)
+gh release delete v1.0.0
+```
 
 ## Feature Requests and Bug Reports
 
