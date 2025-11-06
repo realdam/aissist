@@ -1,7 +1,7 @@
 # Project Context
 
 ## Purpose
-Aissist is a local-first, AI-powered CLI personal assistant that helps users track goals, reflections, history, and context logs. It provides semantic recall using Claude AI and works across multiple scoped directories with full Git compatibility.
+Aissist is a local-first, AI-powered CLI personal assistant that connects your past, present, and future in Markdown. It helps users track what they've done (history), manage what they're doing (todos), and plan where they're going (goals)—all with seamless Claude Code integration for AI-powered recall, semantic search, and action planning. Everything is stored in human-readable Markdown files for portability and Git compatibility.
 
 ## Tech Stack
 - **Language**: TypeScript (Node.js >= 20.19.0)

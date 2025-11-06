@@ -1,19 +1,24 @@
 # Aissist
 ![alt text](image.png)
-A local-first, AI-powered CLI personal assistant for tracking goals, reflections, history, and contextual information. All your data stays on your machine in human-readable Markdown files.
+
+**Connect your past, present, and future—all in Markdown.**
+
+Aissist is a local-first, AI-powered CLI personal assistant that helps you track what you've done, manage what you're doing, and plan where you're going. Everything lives in human-readable Markdown files on your machine, with seamless Claude Code integration for AI-powered insights.
 
 ## Features
 
-- **Local-First**: All data stored locally in Markdown files
+- **Claude Code Integration**: Seamlessly works with Claude Code for AI-powered recall, proposals, and semantic search
+- **Connect Your Timeline**: Track your past (history), manage your present (todos), and plan your future (goals)—all interconnected
+- **Local-First & Markdown**: All data stored in human-readable Markdown files on your machine
 - **Dual Storage**: Global (~/.aissist/) and project-specific (./.aissist/) modes
 - **Goal Tracking**: Log and review your goals with AI-generated codenames
 - **Todo Management**: Track daily tasks with checkbox UI and automatic history logging
-- **Completion Animations**: Subtle, satisfying terminal animations when you complete tasks and goals
-- **History Logging**: Track daily activities and events
+- **History Logging**: Track daily activities and events, creating a searchable timeline
 - **Context Management**: Organize information by context (work, diet, fitness, etc.)
 - **Guided Reflection**: Interactive prompts for structured self-reflection
-- **AI-Powered Recall**: Semantic search and summarization using Claude AI
+- **AI-Powered Planning**: Generate action proposals based on your goals and history
 - **Git-Compatible**: All data in Markdown, perfect for version control
+- **Completion Animations**: Subtle, satisfying terminal animations when you complete tasks
 
 ## Installation
 
@@ -29,9 +34,11 @@ npx aissist init
 
 ## Quick Start
 
-1. **Initialize storage**:
+1. **Install and initialize**:
 
 ```bash
+npm install -g aissist
+
 # For project-specific storage (./.aissist/)
 aissist init
 
@@ -39,42 +46,51 @@ aissist init
 aissist init --global
 ```
 
-2. **Track your goals**:
+2. **Set up Claude Code integration** (recommended):
+
+```bash
+# Install Claude Code if you haven't already
+# https://claude.ai/download
+
+# Login to enable AI features
+claude login
+```
+
+3. **Track your goals**:
 
 ```bash
 aissist goal add "Learn TypeScript"
 aissist goal list
 ```
 
-3. **Log your activities**:
+4. **Log your activities**:
 
 ```bash
 aissist history log "Completed code review for PR #123"
 aissist history show
 ```
 
-4. **Add context-specific information**:
+5. **Get AI-powered insights**:
 
 ```bash
-aissist context log work "Sprint planning notes..."
-aissist context log diet "Meal prep for the week"
-aissist context list
-```
-
-5. **Reflect on your day**:
-
-```bash
-aissist reflect
-```
-
-6. **Search your memories** (requires Claude Code):
-
-```bash
-# First-time setup
-claude login
-
-# Then use recall
+# Search your history semantically
 aissist recall "what did I learn about TypeScript?"
+
+# Generate action proposals
+aissist propose "this week"
+
+# Get immediate next action
+aissist propose now
+```
+
+6. **Reflect and organize**:
+
+```bash
+# Guided reflection
+aissist reflect
+
+# Context-specific notes
+aissist context log work "Sprint planning notes..."
 ```
 
 ## Commands

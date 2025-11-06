@@ -1,10 +1,12 @@
 # Aissist Plugin for Claude Code
 
-AI-powered personal assistant plugin that brings aissist's goal tracking, history logging, and semantic recall directly into your Claude Code workflow.
+**Connect your past, present, and future in Markdown—right inside Claude Code.**
+
+The Aissist Plugin provides seamless integration between aissist's timeline-connected memory system and your Claude Code workflow. Track what you've done, manage what you're doing, and plan where you're going without leaving your AI coding assistant.
 
 ## Overview
 
-The Aissist Plugin extends Claude Code with intelligent slash commands and skills for tracking your work, managing goals, and searching your personal memory. It integrates seamlessly with the [aissist CLI](../README.md) to provide AI-enhanced logging, GitHub activity import, semantic recall, and accomplishment reporting.
+Aissist works natively with Claude Code through intelligent slash commands and automatic skill activation. It brings goal tracking, history logging, semantic recall, and AI-powered planning directly into your conversations—all stored in portable Markdown files.
 
 ### Key Features
 
