@@ -94,6 +94,7 @@ Example trigger phrases:
 | `/aissist:log-github` | Import GitHub activity | `/aissist:log-github "this week"` |
 | `/aissist:recall` | Semantic search across history | `/aissist:recall "TypeScript learning"` |
 | `/aissist:report` | Generate accomplishment reports | `/aissist:report "last month"` |
+| `/aissist:todo` | Extract todos from context with AI | `/aissist:todo Fix auth, update docs, add tests` |
 
 ### `/aissist:log` - AI-Enhanced Logging
 
@@ -188,6 +189,63 @@ Create accomplishment reports from your history for various purposes.
 - Goal-based organization
 
 See [commands/report.md](./commands/report.md) for more details.
+
+### `/aissist:todo` - AI-Powered Todo Extraction
+
+Extract actionable tasks from freeform context and automatically create todos with goal linking.
+
+**Usage:**
+```
+/aissist:todo <context>
+```
+
+**With Images:**
+```
+/aissist:todo [attach image] <context>
+```
+
+**Features:**
+- AI extracts distinct, actionable tasks from any context
+- Semantic goal matching automatically links tasks to relevant goals
+- Supports multimodal input (text + images)
+- Handles meeting notes, project docs, bug reports, design mockups
+- Infers priority from urgency indicators
+- Shows clear summary of created todos grouped by goal
+
+**Examples:**
+
+Simple multi-task extraction:
+```
+/aissist:todo Review API endpoints for security, update docs, and write integration tests
+```
+
+Meeting notes:
+```
+/aissist:todo From today's standup: Need to fix payment bug, update pipeline, schedule code review
+```
+
+With design mockup:
+```
+/aissist:todo [attach mockup.png] Implement these UI changes for the dashboard
+```
+
+**Output Example:**
+```
+Extracted 3 todos from context:
+
+Goals:
+  improve-api-security (2 todos)
+  documentation (1 todo)
+
+Added todos:
+  [improve-api-security] Review API endpoints for security vulnerabilities
+  [improve-api-security] Write integration tests for API endpoints
+  [documentation] Update API documentation
+
+Created 3 todos linked to 2 goals
+```
+
+See [commands/todo.md](./commands/todo.md) for detailed documentation.
 
 ## Aissist CLI Skill
 
