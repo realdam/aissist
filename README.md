@@ -5,6 +5,8 @@
 
 Aissist is a local-first, AI-powered CLI personal assistant that helps you track what you've done, manage what you're doing, and plan where you're going. Everything lives in human-readable Markdown files on your machine, with seamless Claude Code integration for AI-powered insights.
 
+![alt text](demo.gif)
+
 ## Features
 
 - **Claude Code Integration**: Seamlessly works with Claude Code for AI-powered recall, proposals, and semantic search

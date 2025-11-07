@@ -14,7 +14,7 @@ import {
 } from '../utils/storage.js';
 import { getCurrentDate, getCurrentTime, parseDate, formatDate } from '../utils/date.js';
 import { parseNaturalDate } from '../utils/date-parser.js';
-import { success, error, info } from '../utils/cli.js';
+import { success, error, info, withSpinner } from '../utils/cli.js';
 import { generateGoalCodename } from '../llm/claude.js';
 import { parseTimeframe } from '../utils/timeframe-parser.js';
 import chalk from 'chalk';
@@ -46,10 +46,13 @@ goalCommand
       // Get existing codenames to ensure uniqueness
       const existingCodenames = await getExistingCodenames(filePath);
 
-      // Generate codename
+      // Generate codename with loading indicator
       let codename: string;
       try {
-        codename = await generateGoalCodename(text, existingCodenames);
+        codename = await withSpinner(
+          generateGoalCodename(text, existingCodenames),
+          'Generating unique codename...'
+        );
       } catch (err) {
         error(`Failed to generate codename: ${(err as Error).message}`);
         return;

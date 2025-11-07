@@ -47,11 +47,18 @@ export async function checkClaudeCodeSession(): Promise<ClaudeSessionStatus> {
 /**
  * Execute Claude CLI command with prompt via stdin
  */
-async function executeClaudeCommand(prompt: string, timeoutMs: number = 30000): Promise<string> {
+async function executeClaudeCommand(prompt: string, timeoutMs: number = 30000, model?: string): Promise<string> {
   return new Promise((resolve, reject) => {
     // Use stdin for the prompt (better for long prompts than CLI args)
     // --allowedTools with empty string to disable all tools for security
-    const proc = spawn('claude', ['--allowedTools', '']);
+    const args = ['--allowedTools', ''];
+
+    // Add model selection if specified
+    if (model) {
+      args.push('--model', model);
+    }
+
+    const proc = spawn('claude', args);
 
     let stdout = '';
     let stderr = '';
@@ -332,7 +339,8 @@ Requirements:
 Respond with ONLY the codename, nothing else.`;
 
   try {
-    let codename = await executeClaudeCommand(prompt, 15000);
+    // Use Haiku for fast, cost-effective codename generation
+    let codename = await executeClaudeCommand(prompt, 15000, 'haiku');
     // Clean up the response - remove any extra whitespace, quotes, or markdown
     codename = codename.trim().replace(/^["'`]+|["'`]+$/g, '');
 
