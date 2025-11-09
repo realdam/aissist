@@ -48,23 +48,83 @@ This slash command orchestrates report generation by having Claude directly anal
    - Completed goals (from `goals/finished/*.md` files)
    - Completed todos (extracted from history entries)
    - Context-specific notes (from `context/*.md` files if --context specified)
-4. Aggregate and transform the raw data into professional language
-5. Generate a formatted markdown report with sections appropriate to the data:
+4. **Identify vague entries** and interactively clarify them (see Interactive Clarification section below)
+5. Aggregate and transform the raw data into professional language
+6. Generate a formatted markdown report with sections appropriate to the data:
    - Key Accomplishments
    - Goals Completed
    - Skills Developed
    - Projects & Contributions
    - Productivity Metrics
-6. Adapt language and emphasis based on the purpose parameter
-7. Output the report or save to file if --output specified
+7. Adapt language and emphasis based on the purpose parameter
+8. Output the report or save to file if --output specified
 
 **How it works:** Claude reads the markdown files directly and uses its understanding to:
 - Parse dates and filter entries within the timeframe
+- **Detect vague or incomplete entries that need clarification**
+- **Ask clarifying questions and improve entries interactively**
 - Transform technical logs into professional accomplishment statements
 - Group related activities into cohesive achievements
 - Extract skills and technologies mentioned
 - Identify project contributions
 - Format everything appropriately for the specified purpose (promotion, manager-update, etc.)
+
+## Interactive Clarification
+
+During report generation, Claude automatically identifies vague or incomplete history entries and asks clarifying questions to improve them. This ensures your report has the specificity and impact needed for professional use.
+
+### What Triggers Clarification
+
+Claude asks questions when it encounters entries with:
+
+1. **Generic descriptions**: "worked on stuff", "fixed things", "did work"
+2. **Missing metrics**: "improved performance", "made it faster" (without numbers)
+3. **Unclear context**: "meeting", "discussion", "call" (without who/what/why)
+4. **Technical jargon**: Domain-specific terms without explanation or impact
+
+### How Clarification Works
+
+**Interactive Flow:**
+
+1. Claude detects a vague entry (e.g., "worked on stuff" from Nov 5)
+2. Claude asks a specific clarifying question:
+   - For generic work: "What specific work did you complete?"
+   - For missing metrics: "What were the before/after measurements?"
+   - For unclear meetings: "What was the meeting about? Who attended? What was accomplished?"
+3. You provide additional context
+4. Claude proposes an improved entry with before/after comparison
+5. You confirm (y) or decline (n) the edit
+6. If confirmed, Claude updates the history file and continues
+7. Final report includes all improvements
+
+**You can skip clarification** for any entry - just respond "skip" or "no" when asked. Claude will continue with the original entry.
+
+### Example Clarification Conversation
+
+```
+Claude: I found a vague entry from November 5: "worked on stuff"
+        What specific work did you complete?
+
+You: Implemented OAuth 2.0 authentication for the customer portal
+
+Claude: I'll improve this entry to:
+
+Original: "worked on stuff"
+Improved: "Implemented OAuth 2.0 authentication system for customer portal"
+
+Update history/2025-11-05.md with this improved entry? (y/n)
+
+You: y
+
+Claude: Entry updated. Continuing with report generation...
+```
+
+### Benefits
+
+- **Better reports**: Specific, impactful accomplishments instead of vague notes
+- **Improved data**: Your history files get better for future reports
+- **Seamless workflow**: No need to manually edit files and regenerate
+- **Optional**: Skip any clarification you don't want to provide
 
 ## Purpose-Based Formatting
 
@@ -89,6 +149,9 @@ Different purposes emphasize different aspects:
 - The `--purpose` flag significantly changes the language and emphasis
 - Save important reports with `--output` for future reference
 - Link work to goals for better categorization in reports
+- **Clarify vague entries when prompted** - it improves both your report and your historical data
+- **You can always skip clarification** - just say "skip" or "no" if you don't have time
+- **Clarified entries are saved** - they'll automatically appear in future reports too
 - Ask a follow-up question if the user wants to export this report in a file format or into an external source using MCP. 
 
 ---
