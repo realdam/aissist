@@ -154,87 +154,124 @@ All data is stored in **human-readable Markdown** format.
 
 `goals/2024-01-15.md`:
 ```markdown
-## learn-typescript-fundamentals
-
-**Status:** active
-**Created:** 2024-01-15T10:30:00Z
-**Deadline:** 2024-12-31
-**Priority:** high
-**Description:** Learn TypeScript fundamentals
-
+---
+schema_version: "1.0"
+timestamp: "10:30"
+codename: learn-typescript-fundamentals
+deadline: "2024-12-31"
+description: "Learn TypeScript fundamentals"
 ---
 
-## build-portfolio-website
-
-**Status:** completed
-**Created:** 2024-01-15T14:00:00Z
-**Completed:** 2024-02-10T16:00:00Z
-**Description:** Build portfolio website with Next.js
+Learn TypeScript fundamentals
 
 ---
+schema_version: "1.0"
+timestamp: "14:00"
+codename: build-portfolio-website
+description: "Build portfolio website with Next.js"
+---
+
+Build portfolio website with Next.js
+```
+
+Completed goals in `goals/finished/`:
+```markdown
+---
+schema_version: "1.0"
+timestamp: "14:00"
+codename: build-portfolio-website
+completed: "2024-02-10"
+description: "Build portfolio website with Next.js"
+---
+
+Build portfolio website with Next.js
 ```
 
 ### History File Format
 
 `history/2024-01-15.md`:
 ```markdown
-# History - January 15, 2024
-
-## 10:30 AM
+---
+schema_version: "1.0"
+timestamp: "10:30"
+---
 
 Completed code review for PR #123
 
 ---
-
-## 2:45 PM
+schema_version: "1.0"
+timestamp: "14:45"
+goal: build-user-authentication
+---
 
 Fixed critical authentication bug
 
-**Goal:** build-user-authentication
-
 ---
-
-## 4:15 PM
+schema_version: "1.0"
+timestamp: "16:15"
+---
 
 Helped Sarah debug deployment issue
-
----
 ```
 
 ### Context File Format
 
 `contexts/work/2024-01-15.md`:
 ```markdown
-# Work Context - January 15, 2024
-
-## 9:00 AM
+---
+schema_version: "1.0"
+timestamp: "09:00"
+---
 
 Team standup: Discussed sprint priorities for authentication module
 
 ---
-
-## 11:30 AM
+schema_version: "1.0"
+timestamp: "11:30"
+---
 
 Sprint planning: Decided to use JWT for token management
 
 ---
-
-## 3:00 PM
+schema_version: "1.0"
+timestamp: "15:00"
+---
 
 Code review meeting: Reviewed security best practices
-
----
 ```
 
 ### Todo File Format
 
 `todos/2024-01-15.md`:
 ```markdown
-# Todos
+---
+schema_version: "1.0"
+timestamp: "09:00"
+priority: high
+---
 
-- [ ] Review PR #156 (priority: high)
-- [ ] Update documentation (goal: improve-docs)
-- [x] Fix critical bug (completed: 2024-01-15T14:30:00Z)
+- [ ] Review PR #156
+
+---
+schema_version: "1.0"
+timestamp: "09:15"
+goal: improve-docs
+---
+
+- [ ] Update documentation
+
+---
+schema_version: "1.0"
+timestamp: "14:30"
+---
+
+- [x] Fix critical bug
+
+---
+schema_version: "1.0"
+timestamp: "09:30"
+---
+
 - [ ] Team standup at 10am
 ```
 
@@ -242,7 +279,10 @@ Code review meeting: Reviewed security best practices
 
 `reflections/2024-01-15.md`:
 ```markdown
-# Reflection - January 15, 2024
+---
+schema_version: "1.0"
+timestamp: "20:00"
+---
 
 ## What did you accomplish?
 

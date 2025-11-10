@@ -168,25 +168,30 @@ aissist goal add "Monthly report"          # Then enter: 2026 Q1
 ```
 
 **Goal Format:**
-Goals are stored with codenames and metadata:
+Goals are stored with YAML front matter containing codenames and metadata:
 ```markdown
-## 14:30 - complete-project-proposal
+---
+schema_version: "1.0"
+timestamp: "14:30"
+codename: complete-project-proposal
+deadline: "2025-11-15"
+---
 
 Complete project proposal
-
-Deadline: 2025-11-15
 ```
 
 **Completed Goals:**
 Finished goals are stored in `goals/finished/` with completion dates:
 ```markdown
-## 14:30 - complete-project-proposal
+---
+schema_version: "1.0"
+timestamp: "14:30"
+codename: complete-project-proposal
+deadline: "2025-11-15"
+completed: "2025-11-10"
+---
 
 Complete project proposal
-
-Deadline: 2025-11-15
-
-Completed: 2025-11-10
 ```
 
 ### `aissist history`
@@ -272,26 +277,35 @@ aissist todo remove 3
 ```
 
 **Todo Format:**
-Todos are stored in checkbox format:
+Todos are stored with YAML front matter in checkbox format:
 ```markdown
-## 14:30
+---
+schema_version: "1.0"
+timestamp: "14:30"
+---
 
 - [ ] Review PR #123
 
-## 14:32
+---
+schema_version: "1.0"
+timestamp: "14:32"
+goal: complete-mvp
+---
 
-- [ ] Write documentation (Goal: complete-mvp)
+- [ ] Write documentation
 ```
 
 When completed, todos are marked with `[x]` and logged to history:
 ```markdown
-## 16:45
+---
+schema_version: "1.0"
+timestamp: "16:45"
+goal: complete-mvp
+---
 
 Review PR #123
 
 Completed from TODO
-
-Goal: complete-mvp
 ```
 
 ![Goal & Todo Management](demos/demo-3-todos.gif)
