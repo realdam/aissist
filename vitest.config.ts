@@ -5,6 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
+    exclude: ['node_modules/**', 'dist/**'], // Standard exclusions only
     // E2E tests need longer timeouts for subprocess execution
     testTimeout: 60000, // 60s for E2E tests
     hookTimeout: 60000, // 60s for setup/teardown hooks
