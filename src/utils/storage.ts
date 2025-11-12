@@ -25,6 +25,11 @@ export const ConfigSchema = z.object({
       timeout: z.number().positive().default(2000),
     })
     .default({ enabled: true, strategy: 'ai', timeout: 2000 }),
+  updateCheck: z
+    .object({
+      enabled: z.boolean().default(true),
+    })
+    .default({ enabled: true }),
   readPaths: z.array(z.string()).optional().default([]),
 });
 
@@ -136,6 +141,7 @@ export async function initializeStorage(basePath: string): Promise<void> {
   await ensureDirectory(join(basePath, 'reflections'));
   await ensureDirectory(join(basePath, 'todos'));
   await ensureDirectory(join(basePath, 'proposals'));
+  await ensureDirectory(join(basePath, 'cache'));
 
   // Create default config if it doesn't exist
   const configPath = join(basePath, 'config.json');
@@ -154,6 +160,9 @@ export async function initializeStorage(basePath: string): Promise<void> {
         enabled: true,
         strategy: 'ai',
         timeout: 2000,
+      },
+      updateCheck: {
+        enabled: true,
       },
       readPaths: [],
     };

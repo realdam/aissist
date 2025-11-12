@@ -470,6 +470,31 @@ aissist config hierarchy enable
 aissist config hierarchy disable
 ```
 
+### `aissist config update-check`
+
+Manage automatic version update checks.
+
+By default, Aissist automatically checks for new versions once per day when you run any command. This ensures you're always notified of important updates, bug fixes, and new features.
+
+**Commands:**
+```bash
+# Show update check status
+aissist config update-check
+
+# Enable automatic update checks (default)
+aissist config update-check enable
+
+# Disable automatic update checks
+aissist config update-check disable
+```
+
+**How it works:**
+- Checks npm registry for latest version on CLI startup
+- Non-blocking: doesn't slow down command execution
+- Cached: only checks once per 24 hours to minimize network requests
+- Graceful: silently fails if network is unavailable
+- Displays update notification after command completes when update is available
+
 ## Hierarchical Configuration for Monorepos
 
 Aissist supports hierarchical configuration, allowing you to access goals and data from parent directories while keeping writes isolated to your local directory. This is perfect for monorepos and nested projects.

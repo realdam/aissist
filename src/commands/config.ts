@@ -268,4 +268,91 @@ hintsCommand.action(async () => {
   }
 });
 
+/**
+ * Enable update checks
+ */
+export async function updateCheckEnableCommand(): Promise<void> {
+  const storagePath = await getStoragePath();
+  const config = await loadConfig(storagePath);
+
+  if (!config.updateCheck) {
+    config.updateCheck = { enabled: true };
+  } else {
+    config.updateCheck.enabled = true;
+  }
+
+  await saveConfig(storagePath, config);
+  success('Update checks enabled');
+}
+
+/**
+ * Disable update checks
+ */
+export async function updateCheckDisableCommand(): Promise<void> {
+  const storagePath = await getStoragePath();
+  const config = await loadConfig(storagePath);
+
+  if (!config.updateCheck) {
+    config.updateCheck = { enabled: false };
+  } else {
+    config.updateCheck.enabled = false;
+  }
+
+  await saveConfig(storagePath, config);
+  success('Update checks disabled');
+}
+
+/**
+ * Show update check status
+ */
+export async function updateCheckStatusCommand(): Promise<void> {
+  const storagePath = await getStoragePath();
+
+  try {
+    const config = await loadConfig(storagePath);
+    const updateCheck = config.updateCheck || { enabled: true };
+
+    console.log('\nUpdate check configuration:');
+    console.log(`  Enabled: ${updateCheck.enabled ? 'yes' : 'no'}`);
+  } catch {
+    warn('No configuration found');
+  }
+}
+
+// Register update-check subcommands
+const updateCheckCommand = configCommand
+  .command('update-check')
+  .description('Manage automatic update checks');
+
+updateCheckCommand
+  .command('enable')
+  .description('Enable automatic version update checks on startup')
+  .action(async () => {
+    try {
+      await updateCheckEnableCommand();
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+updateCheckCommand
+  .command('disable')
+  .description('Disable automatic version update checks')
+  .action(async () => {
+    try {
+      await updateCheckDisableCommand();
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+// Default action shows status
+updateCheckCommand.action(async () => {
+  try {
+    await updateCheckStatusCommand();
+  } catch (error) {
+    handleError(error);
+  }
+});
+
 export { configCommand };

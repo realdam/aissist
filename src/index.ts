@@ -4,8 +4,11 @@ import { Command } from 'commander';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import chalk from 'chalk';
 import { handleError } from './utils/cli.js';
 import { printBrand } from './utils/brand.js';
+import { checkForUpdates, formatUpdateNotification } from './utils/update-checker.js';
+import { getStoragePath, loadConfig, ensureDirectory } from './utils/storage.js';
 
 // Import commands
 import { initCommand } from './commands/init.js';
@@ -35,6 +38,41 @@ try {
 
 // Print brand logo
 printBrand();
+
+// Start update check in background (non-blocking)
+async function performUpdateCheck(): Promise<void> {
+  try {
+    const storagePath = await getStoragePath();
+
+    // Ensure cache directory exists
+    await ensureDirectory(join(storagePath, 'cache'));
+
+    // Check if update checks are enabled in config
+    const config = await loadConfig(storagePath);
+    const updateCheckEnabled = config.updateCheck?.enabled ?? true;
+
+    if (!updateCheckEnabled) {
+      return;
+    }
+
+    const result = await checkForUpdates(version, storagePath);
+
+    if (result.updateAvailable) {
+      const notification = formatUpdateNotification(result);
+      if (notification) {
+        // Store notification to display after command execution
+        process.on('beforeExit', () => {
+          console.log('\n' + chalk.yellow(notification) + '\n');
+        });
+      }
+    }
+  } catch {
+    // Silently fail - update check is not critical
+  }
+}
+
+// Trigger update check asynchronously (don't await)
+void performUpdateCheck();
 
 const program = new Command();
 
